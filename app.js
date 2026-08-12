@@ -8,7 +8,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 let currentUser = null;
 let currentProfile = null;
-let officeData = { lat: 5.187745, lng: 97.147974, radius: 100 }; // Default MAN Lhokseumawe
+let officeData = { lat: 5.187745, lng: 97.147974, radius: 500 }; // Default MAN Lhokseumawe
 let userLocation = null;
 let userMap, userMarker, userCircle;
 let adminMap, adminMarker, adminCircle;
