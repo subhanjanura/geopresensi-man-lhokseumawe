@@ -51,7 +51,7 @@
             <div class="info-lokasi">
                 <strong>Selamat datang, <span id="userDisplayName"></span></strong><br>
                 <strong>Lokasi Madrasah:</strong> MAN Kota Lhokseumawe<br>
-                <strong>Radius Maksimal:</strong> 150 Meter dari titik madrasah.
+                <strong>Lokasi Anda Saat Ini:</strong> <span id="userRealLocation" style="color: #2980b9;">Mendeteksi lokasi perangkat...</span>
             </div>
 
             <form id="presensiForm">
@@ -82,11 +82,49 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlTxvYf8DfP_i_9aFq3Rv4OGrsqTLg9Xgwd6rdho8kRUpZ6FBjsY5rW9oftuujTetyKw/exec";
         
         // Koordinat MAN Kota Lhokseumawe
-        const LAT_MADRASAH = 5.1802; 
-        const LNG_MADRASAH = 97.1445;
-        const MAX_RADIUS = 150; // dalam meter
+        const LAT_MADRASAH = 5.187779;
+        const LNG_MADRASAH = 97.147981;
+        const MAX_RADIUS = 500; // dalam meter
 
         let currentUser = null;
+
+        // FUNGSI DETEKSI LOKASI RIIL PERANGKAT USER
+        function deteksiLokasiUser() {
+            const locationSpan = document.getElementById('userRealLocation');
+
+            if (!navigator.geolocation) {
+                locationSpan.innerText = "Geolocation tidak didukung oleh browser.";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                // Menggunakan Nominatim OpenStreetMap untuk Reverse Geocoding
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+
+                fetch(url, {
+                    headers: {
+                        'Accept-Language': 'id'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        locationSpan.innerText = data.display_name;
+                    } else {
+                        locationSpan.innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+                    }
+                })
+                .catch(err => {
+                    locationSpan.innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+                });
+
+            }, function(error) {
+                locationSpan.innerText = "Gagal mendeteksi GPS (Izin lokasi ditolak / GPS mati)";
+            }, { enableHighAccuracy: true });
+        }
 
         // PROSES LOGIN KE SPREADSHEET BERDASARKAN NIK
         document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -120,6 +158,9 @@
                     document.getElementById('loginSection').classList.add('hidden');
                     document.getElementById('presensiSection').classList.remove('hidden');
                     document.getElementById('userDisplayName').innerText = `${currentUser.nama} (${currentUser.role})`;
+                    
+                    // Panggil fungsi deteksi lokasi riil perangkat setelah login berhasil
+                    deteksiLokasiUser();
                 } else {
                     errorBox.style.display = 'block';
                     errorBox.innerText = data.message || 'NIK atau Password salah!';
