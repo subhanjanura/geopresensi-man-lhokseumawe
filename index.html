@@ -194,7 +194,7 @@
 </div>
 
 <script>
-const WEB_APP_URL="https://script.google.com/macros/s/AKfycbyiFdl3hkqK8D-6wY0Zs_F5mZ6y1MDzz4Q4GlfYL5ERCb5PrzHYxxkU-egUie3prloOiA/exec";
+const WEB_APP_URL="https://script.google.com/macros/s/AKfycbwa9Nc2JgfYwn9GHgWqXKhdtWKAXTa6RcE4nnVx0yuffVUJyc9R4Y9k8_iPUiS-_ogijw/exec";
 const LAT_MADRASAH=5.187779,LNG_MADRASAH=97.147981,MAX_RADIUS=500;
 let currentUser=null,globalRekapData=[],map,userMarker,userCoords=null;
 
@@ -381,7 +381,7 @@ function updateButtons(){
         hintPulang.textContent="Sudah presensi pulang";
     }else if(!hasIn){
         btnPulang.disabled=true;
-        hintPulang.textContent="Belum presensi pulang";
+        hintPulang.textContent="Belum presensi masuk";
     }else if(total<batasPulang){
         btnPulang.disabled=true;
         hintPulang.textContent=`Tersedia mulai pukul ${jamPulangText} WIB`;
