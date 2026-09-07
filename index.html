@@ -48,6 +48,7 @@
         .presensi-panel{background:#fafafa;padding:15px;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:20px}
         .button-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
         .button-grid button{margin-top:0}
+        .btn-hint{font-size:0.75em;color:#7f8c8d;margin-top:4px;text-align:center;display:block}
         .table-responsive{width:100%;overflow-x:auto;margin-top:15px}
         table{width:100%;border-collapse:collapse;font-size:.84em}
         th,td{border:1px solid #ddd;padding:8px;text-align:left;white-space:nowrap}
@@ -123,8 +124,14 @@
         <div class="presensi-panel">
             <h4 style="margin-top:0;color:#16a085">Presensi Hari Ini</h4>
             <div class="button-grid">
-                <button id="btnHadir" class="btn-hadir">✅ Presensi Masuk / Hadir</button>
-                <button id="btnPulang" class="btn-pulang">🏠 Presensi Pulang</button>
+                <div>
+                    <button id="btnHadir" class="btn-hadir">✅ Presensi Masuk / Hadir</button>
+                    <span id="hintHadir" class="btn-hint"></span>
+                </div>
+                <div>
+                    <button id="btnPulang" class="btn-pulang">🏠 Presensi Pulang</button>
+                    <span id="hintPulang" class="btn-hint"></span>
+                </div>
             </div>
             <div id="status-box"></div>
         </div>
@@ -187,7 +194,7 @@
 </div>
 
 <script>
-const WEB_APP_URL="https://script.google.com/macros/s/AKfycbxKGeFVOllsCjlrgXrq-EIqAaTS96wJ1qPquCzZVxRwFe2Hc0wT4SiXO0ZEZks17vYLrA/exec";
+const WEB_APP_URL="https://script.google.com/macros/s/AKfycbyiFdl3hkqK8D-6wY0Zs_F5mZ6y1MDzz4Q4GlfYL5ERCb5PrzHYxxkU-egUie3prloOiA/exec";
 const LAT_MADRASAH=5.187779,LNG_MADRASAH=97.147981,MAX_RADIUS=500;
 let currentUser=null,globalRekapData=[],map,userMarker,userCoords=null;
 
@@ -212,10 +219,6 @@ function showMessage(el,type,message){
     el.style.display="block";
 }
 
-function getWibDate(){
-    return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta"}).format(new Date());
-}
-
 function getWibNow(){
     const parts=new Intl.DateTimeFormat("en-US",{
         timeZone:"Asia/Jakarta",weekday:"short",hour:"2-digit",minute:"2-digit",
@@ -229,57 +232,36 @@ function getWibNow(){
     };
 }
 
-function normalizeItem(item={}){
-    return {
-        timestamp:txt(item.timestamp),
-        nik:txt(item.nik).trim(),
-        nama:txt(item.nama),
-        role:txt(item.role),
-        status:txt(item.status)
-    };
-}
-
-function getDateKey(timestamp){
-    const value=txt(timestamp).split(",")[0].trim(),p=value.split("/");
-    if(p.length===3){
-        const [d,m,y]=p.map(Number);
-        if(d&&m&&y)return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    }
-    const date=new Date(value);
-    return Number.isNaN(date.getTime())?"":date.toISOString().slice(0,10);
-}
-
-function getTime(timestamp){
-    const parts=txt(timestamp).split(",");
-    return parts.length>1?parts.slice(1).join(",").trim():"-";
-}
-
-function formatDate(timestamp){
-    const key=getDateKey(timestamp);
-    if(!key)return txt(timestamp)||"-";
-    return new Date(`${key}T00:00:00`).toLocaleDateString("id-ID",{
-        weekday:"long",year:"numeric",month:"long",day:"numeric"
-    });
+function formatDateDisplay(dateKey){
+    if(!dateKey) return "-";
+    const date=new Date(`${dateKey}T00:00:00`);
+    if(isNaN(date.getTime())) return dateKey;
+    return date.toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 }
 
 function combineRecords(data){
     const groups=new Map();
 
     data.forEach(row=>{
-        const dateKey=getDateKey(row.timestamp);
-        const key=`${row.nik}|${dateKey}`;
+        const key=`${row.nik}|${row.dateKey}`;
 
         if(!groups.has(key)){
             groups.set(key,{
-                date:formatDate(row.timestamp),dateKey,
-                nik:row.nik,nama:row.nama,role:row.role,
-                masuk:null,pulang:null
+                date:formatDateDisplay(row.dateKey),
+                dateKey:row.dateKey,
+                nik:row.nik,
+                nama:row.nama,
+                role:row.role,
+                status:row.status,
+                masuk:row.masuk !== "-" ? row.masuk : null,
+                pulang:row.pulang !== "-" ? row.pulang : null
             });
+        }else{
+            const item=groups.get(key);
+            if(row.masuk !== "-") item.masuk = row.masuk;
+            if(row.pulang !== "-") item.pulang = row.pulang;
+            if(row.status !== "-") item.status = row.status;
         }
-
-        const item=groups.get(key);
-        if(row.status==="Pulang")item.pulang=row;
-        else if(!item.masuk)item.masuk=row;
     });
 
     return [...groups.values()].sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
@@ -292,8 +274,8 @@ function getUserRows(){
 
     return combineRecords(globalRekapData.filter(x=>
         x.nik===txt(currentUser.nik).trim() &&
-        (!start||getDateKey(x.timestamp)>=start) &&
-        (!end||getDateKey(x.timestamp)<=end)
+        (!start||x.dateKey>=start) &&
+        (!end||x.dateKey<=end)
     ));
 }
 
@@ -304,27 +286,10 @@ function getAdminRows(){
     const role=$("filterRole").value;
 
     return combineRecords(globalRekapData.filter(x=>{
-        const date=getDateKey(x.timestamp);
-        return (!start||date>=start)&&(!end||date<=end)&&
+        return (!start||x.dateKey>=start)&&(!end||x.dateKey<=end)&&
             (!query||x.nama.toLowerCase().includes(query)||x.nik.includes(query))&&
             (!role||x.role===role);
     }));
-}
-
-function getCombinedStatus(row){
-    if(row.masuk?.status)return row.masuk.status;
-    if(row.pulang?.status)return row.pulang.status;
-    return "-";
-}
-
-function rowData(row,admin=false){
-    const status=getCombinedStatus(row);
-    const jamMasuk=row.masuk?getTime(row.masuk.timestamp):"-";
-    const jamPulang=row.pulang?getTime(row.pulang.timestamp):"-";
-
-    return admin
-        ? [row.date,row.nik,row.nama,row.role,status,jamMasuk,jamPulang]
-        : [row.date,status,jamMasuk,jamPulang];
 }
 
 function renderTable(body,rows,admin=false){
@@ -339,7 +304,11 @@ function renderTable(body,rows,admin=false){
 
     rows.forEach(row=>{
         const tr=document.createElement("tr");
-        rowData(row,admin).forEach(value=>{
+        const rowData = admin
+            ? [row.date, row.nik, row.nama, row.role, row.status, row.masuk||"-", row.pulang||"-"]
+            : [row.date, row.status, row.masuk||"-", row.pulang||"-"];
+
+        rowData.forEach(value=>{
             const td=document.createElement("td");
             td.textContent=value;
             tr.appendChild(td);
@@ -363,7 +332,7 @@ async function fetchData(callback){
         if(data.status!=="success"||!Array.isArray(data.data)){
             throw new Error("Data rekap tidak valid");
         }
-        globalRekapData=data.data.map(normalizeItem);
+        globalRekapData=data.data;
         callback();
     }catch(error){
         console.error(error);
@@ -373,7 +342,7 @@ async function fetchData(callback){
 
 function todayUserRows(){
     return combineRecords(globalRekapData.filter(x=>
-        x.nik===txt(currentUser.nik).trim()&&getDateKey(x.timestamp)===getWibNow().date
+        x.nik===txt(currentUser.nik).trim()&&x.dateKey===getWibNow().date
     ));
 }
 
@@ -382,10 +351,44 @@ function updateButtons(){
     const hasIn=Boolean(today?.masuk),hasOut=Boolean(today?.pulang);
     const total=now.hours*60+now.minutes;
 
-    $("btnHadir").disabled=now.day===0||hasIn||total>=450;
-    $("btnPulang").disabled=now.day===0||!hasIn||hasOut||total<(now.day===5?720:900);
-    $("btnHadir").title=hasIn?"Presensi masuk hari ini sudah dilakukan":"";
-    $("btnPulang").title=hasOut?"Presensi pulang hari ini sudah dilakukan":"";
+    const btnHadir=$("btnHadir"), btnPulang=$("btnPulang");
+    const hintHadir=$("hintHadir"), hintPulang=$("hintPulang");
+
+    if(now.day===0){
+        btnHadir.disabled=true; btnPulang.disabled=true;
+        hintHadir.textContent="Hari Minggu Libur"; hintPulang.textContent="Hari Minggu Libur";
+        return;
+    }
+
+    // Penanganan Tombol Hadir
+    if(hasIn){
+        btnHadir.disabled=true;
+        hintHadir.textContent="Sudah presensi masuk";
+    }else if(total>=450){
+        btnHadir.disabled=true;
+        hintHadir.textContent="Batas waktu masuk (07:30) terlewati";
+    }else{
+        btnHadir.disabled=false;
+        hintHadir.textContent="Tersedia sebelum 07:30 WIB";
+    }
+
+    // Penanganan Tombol Pulang
+    const batasPulang = now.day===5?720:900; // Jumat 12:00, Lainnya 15:00
+    const jamPulangText = now.day===5?"12:00":"15:00";
+
+    if(hasOut){
+        btnPulang.disabled=true;
+        hintPulang.textContent="Sudah presensi pulang";
+    }else if(!hasIn){
+        btnPulang.disabled=true;
+        hintPulang.textContent="Belum presensi pulang";
+    }else if(total<batasPulang){
+        btnPulang.disabled=true;
+        hintPulang.textContent=`Tersedia mulai pukul ${jamPulangText} WIB`;
+    }else{
+        btnPulang.disabled=false;
+        hintPulang.textContent="Tersedia untuk presensi pulang";
+    }
 }
 
 function initMap(){
@@ -394,13 +397,11 @@ function initMap(){
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
         attribution:"© OpenStreetMap"
     }).addTo(map);
-    L.marker([LAT_MADRASAH,LNG_MADRASAH]).addTo(map)
-        .bindPopup("MAN Kota Lhokseumawe");
+    L.marker([LAT_MADRASAH,LNG_MADRASAH]).addTo(map).bindPopup("MAN Kota Lhokseumawe");
 }
 
 function detectLocation(){
     initMap();
-
     if(!navigator.geolocation){
         $("userRealLocation").textContent="Geolocation tidak didukung browser.";
         return;
@@ -409,20 +410,15 @@ function detectLocation(){
     navigator.geolocation.getCurrentPosition(position=>{
         const {latitude:lat,longitude:lng}=position.coords;
         userCoords={lat,lng};
-        $("userRealLocation").textContent=
-            `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`;
+        $("userRealLocation").textContent=`Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`;
 
-        if(userMarker)userMarker.setLatLng([lat,lng]);
+        if(userMarker) userMarker.setLatLng([lat,lng]);
         else userMarker=L.marker([lat,lng]).addTo(map).bindPopup("Lokasi Anda");
 
         map.setView([lat,lng],17);
     },()=>{
-        $("userRealLocation").textContent="Gagal mendapatkan lokasi perangkat.";
-    },{
-        enableHighAccuracy:true,
-        timeout:15000,
-        maximumAge:30000
-    });
+        $("userRealLocation").textContent="Gagal mendapatkan lokasi GPS.";
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
 }
 
 async function submitAttendance(status){
@@ -430,39 +426,8 @@ async function submitAttendance(status){
     const total=now.hours*60+now.minutes;
     const rows=todayUserRows(),today=rows[0];
 
-    if(now.day===0){
-        showMessage(box,"alert-danger","Hari Minggu libur. Presensi tidak tersedia.");
-        return;
-    }
-
-    if(status==="Hadir"&&today?.masuk){
-        showMessage(box,"alert-warning","Anda sudah melakukan presensi masuk hari ini.");
-        return;
-    }
-
-    if(status==="Pulang"&&today?.pulang){
-        showMessage(box,"alert-warning","Anda sudah melakukan presensi pulang hari ini.");
-        return;
-    }
-
-    if(status==="Hadir"&&total>=450){
-        showMessage(box,"alert-warning","Presensi masuk hanya tersedia sebelum pukul 07:30 WIB.");
-        return;
-    }
-
-    const batas=now.day===5?720:900;
-
-    if(status==="Pulang"&&(!today?.masuk||total<batas)){
-        showMessage(
-            box,
-            "alert-warning",
-            `Presensi pulang tersedia setelah pukul ${now.day===5?"12:00":"15:00"} WIB.`
-        );
-        return;
-    }
-
     if(!userCoords){
-        showMessage(box,"alert-danger","Lokasi belum tersedia. Izinkan akses GPS terlebih dahulu.");
+        showMessage(box,"alert-danger","Lokasi belum tersedia. Aktifkan GPS Anda.");
         detectLocation();
         return;
     }
@@ -472,15 +437,10 @@ async function submitAttendance(status){
     button.textContent="Mengirim presensi...";
 
     try{
-        const distance=hitungJarak(
-            userCoords.lat,userCoords.lng,
-            LAT_MADRASAH,LNG_MADRASAH
-        );
+        const distance=hitungJarak(userCoords.lat,userCoords.lng,LAT_MADRASAH,LNG_MADRASAH);
 
         if(status==="Hadir"&&distance>MAX_RADIUS){
-            throw new Error(
-                `Anda berada di luar radius madrasah (${Math.round(distance)} meter).`
-            );
+            throw new Error(`Anda berada di luar radius madrasah (${Math.round(distance)} meter).`);
         }
 
         const data=await apiRequest({
@@ -491,35 +451,27 @@ async function submitAttendance(status){
             role:currentUser.role,
             status,
             latitude:userCoords.lat,
-            longitude:userCoords.lng,
-            jarak:`${Math.round(distance)} meter`
+            longitude:userCoords.lng
         });
 
         if(data.status!=="success"){
             throw new Error(data.message||"Presensi ditolak server.");
         }
 
-        showMessage(
-            box,
-            "alert-success",
-            `Presensi ${status==="Hadir"?"masuk":"pulang"} berhasil dicatat.`
-        );
+        showMessage(box,"alert-success",`Presensi ${status==="Hadir"?"masuk":"pulang"} berhasil dicatat.`);
         await fetchData(filterUserHistory);
     }catch(error){
         showMessage(box,"alert-danger",error.message||"Presensi gagal dikirim.");
         updateButtons();
     }finally{
-        button.textContent=status==="Hadir"
-            ?"✅ Presensi Masuk / Hadir"
-            :"🏠 Presensi Pulang";
+        button.textContent=status==="Hadir"?"✅ Presensi Masuk / Hadir":"🏠 Presensi Pulang";
     }
 }
 
 function hitungJarak(lat1,lon1,lat2,lon2){
     const r=x=>x*Math.PI/180,R=6371000;
     const dLat=r(lat2-lat1),dLon=r(lon2-lon1);
-    const a=Math.sin(dLat/2)**2+
-        Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;
+    const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
@@ -533,31 +485,39 @@ function exportPDF(rows,admin=false){
 
     doc.setFontSize(11);
     doc.setTextColor(40,40,40);
-    doc.text(
-        "Rekapitulasi Kehadiran Guru & Tenaga Kependidikan",
-        148,23,{align:"center"}
-    );
+    doc.text("Rekapitulasi Kehadiran Guru & Tenaga Kependidikan",148,23,{align:"center"});
 
     const headers=admin
         ?[["Hari, Tanggal","NIK","Nama","Role","Status","Jam Masuk","Jam Pulang"]]
         :[["Hari, Tanggal","Status","Jam Masuk","Jam Pulang"]];
 
+    const bodyData = rows.map(row => admin 
+        ? [row.date, row.nik, row.nama, row.role, row.status, row.masuk||"-", row.pulang||"-"]
+        : [row.date, row.status, row.masuk||"-", row.pulang||"-"]
+    );
+
     doc.autoTable({
         startY:32,
         head:headers,
-        body:rows.map(row=>rowData(row,admin)),
+        body:bodyData,
         theme:"grid",
         headStyles:{fillColor:[22,160,133]},
         styles:{fontSize:8}
     });
 
-    doc.save(`${admin?"Rekap_Presensi":"Riwayat_Presensi"}_${getWibDate()}.pdf`);
+    const nowStr = new Date().toISOString().slice(0,10);
+    doc.save(`${admin?"Rekap_Presensi":"Riwayat_Presensi"}_${nowStr}.pdf`);
 }
 
 function logout(){
     currentUser=null;
     globalRekapData=[];
     userCoords=null;
+
+    if(userMarker && map) {
+        map.removeLayer(userMarker);
+        userMarker = null;
+    }
 
     $("loginForm").reset();
     $("loginSection").classList.remove("hidden");
@@ -567,12 +527,8 @@ function logout(){
 
 $("loginForm").addEventListener("submit",async event=>{
     event.preventDefault();
-
-    const button=$("btnLogin");
-    const error=$("login-error");
-
-    button.disabled=true;
-    button.textContent="Memeriksa Akun...";
+    const button=$("btnLogin"), error=$("login-error");
+    button.disabled=true; button.textContent="Memeriksa Akun...";
 
     try{
         const data=await apiRequest({
@@ -590,8 +546,7 @@ $("loginForm").addEventListener("submit",async event=>{
 
         if(txt(currentUser.role).toLowerCase()==="admin"){
             $("adminSection").classList.remove("hidden");
-            $("adminNameDisplay").textContent=
-                `${currentUser.nama} (${currentUser.role})`;
+            $("adminNameDisplay").textContent=`${currentUser.nama} (${currentUser.role})`;
             fetchData(filterAdminData);
         }else{
             $("presensiSection").classList.remove("hidden");
@@ -604,8 +559,7 @@ $("loginForm").addEventListener("submit",async event=>{
     }catch(errorObject){
         showMessage(error,"alert-danger",errorObject.message);
     }finally{
-        button.disabled=false;
-        button.textContent="Masuk";
+        button.disabled=false; button.textContent="Masuk";
     }
 });
 
@@ -614,11 +568,8 @@ $("btnPulang").addEventListener("click",()=>submitAttendance("Pulang"));
 $("btnLogoutUser").addEventListener("click",logout);
 $("btnLogoutAdmin").addEventListener("click",logout);
 
-["userFilterStartDate","userFilterEndDate"]
-    .forEach(id=>$(id).addEventListener("change",filterUserHistory));
-
-["filterStartDate","filterEndDate","filterRole"]
-    .forEach(id=>$(id).addEventListener("change",filterAdminData));
+["userFilterStartDate","userFilterEndDate"].forEach(id=>$(id).addEventListener("change",filterUserHistory));
+["filterStartDate","filterEndDate","filterRole"].forEach(id=>$(id).addEventListener("change",filterAdminData));
 
 $("filterName").addEventListener("input",filterAdminData);
 $("btnUserPDF").addEventListener("click",()=>exportPDF(getUserRows()));
@@ -628,7 +579,7 @@ setInterval(()=>{
     if(currentUser&&!$("presensiSection").classList.contains("hidden")){
         updateButtons();
     }
-},30000);
+},15000);
 </script>
 </body>
 </html>
