@@ -27,6 +27,7 @@
         .btn-pdf{background:#e67e22}
         .btn-hadir{background:#16a085}
         .btn-pulang{background:#2980b9}
+        .btn-izin{background:#27ae60}
         .btn-pulang:disabled,.btn-hadir:disabled{background:#95a5a6}
         #status-box,#login-error{display:none;margin-top:15px;padding:12px;border-radius:6px;text-align:center}
         .alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
@@ -56,6 +57,14 @@
         .filter-box{background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #e0e0e0;margin-bottom:15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
         .toolbar{display:flex;gap:10px;flex-wrap:wrap}.toolbar button{flex:1;margin-top:0}
         .section-title{border-top:2px solid #16a085;padding-top:15px;margin-top:30px}
+
+        /* Modal Styles */
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999}
+        .modal-box{background:#fff;width:90%;max-width:450px;padding:25px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.3)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:15px}
+        .modal-header h4{margin:0;color:#16a085}
+        .modal-footer{display:flex;gap:10px;margin-top:20px}
+
         @media(max-width:600px){
             body{padding:10px}.container{padding:16px}.info-content{grid-template-columns:1fr}
             .location-item{grid-column:auto}.button-grid{grid-template-columns:1fr}
@@ -177,6 +186,7 @@
         </div>
 
         <div class="toolbar">
+            <button class="btn-izin" id="btnOpenModalIzin">➕ Input Sakit / Izin</button>
             <button class="btn-pdf" id="btnAdminPDF">📑 Cetak PDF</button>
             <button class="btn-secondary" id="btnLogoutAdmin">Keluar</button>
         </div>
@@ -191,6 +201,34 @@
             </table>
         </div>
     </section>
+</div>
+
+<!-- Modal Input Sakit/Izin Admin -->
+<div id="modalIzin" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h4>Form Input Sakit / Izin</h4>
+        </div>
+        <div class="form-group">
+            <label>Pilih Pegawai</label>
+            <select id="izinSelectPegawai"></select>
+        </div>
+        <div class="form-group">
+            <label>Tanggal</label>
+            <input type="date" id="izinTanggal">
+        </div>
+        <div class="form-group">
+            <label>Jenis Status</label>
+            <select id="izinStatus">
+                <option value="Sakit">Sakit</option>
+                <option value="Izin">Izin</option>
+            </select>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="btnCloseModalIzin">Batal</button>
+            <button type="button" class="btn-hadir" id="btnSubmitIzin">Simpan Status</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -324,6 +362,29 @@ function filterUserHistory(){
 
 function filterAdminData(){
     renderTable($("rekapTableBody"),getAdminRows(),true);
+    populatePegawaiDropdown();
+}
+
+function populatePegawaiDropdown(){
+    const select = $("izinSelectPegawai");
+    select.innerHTML = "";
+    
+    // Ambil daftar unik pegawai dari globalRekapData
+    const mapPegawai = new Map();
+    globalRekapData.forEach(item => {
+        if(!mapPegawai.has(item.nik)){
+            mapPegawai.set(item.nik, { nik: item.nik, nama: item.nama, role: item.role });
+        }
+    });
+
+    mapPegawai.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.nik;
+        opt.dataset.nama = p.nama;
+        opt.dataset.role = p.role;
+        opt.textContent = `${p.nama} (${p.nik})`;
+        select.appendChild(opt);
+    });
 }
 
 async function fetchData(callback){
@@ -360,7 +421,6 @@ function updateButtons(){
         return;
     }
 
-    // Penanganan Tombol Hadir
     if(hasIn){
         btnHadir.disabled=true;
         hintHadir.textContent="Sudah presensi masuk";
@@ -372,8 +432,7 @@ function updateButtons(){
         hintHadir.textContent="Tersedia sebelum 07:30 WIB";
     }
 
-    // Penanganan Tombol Pulang
-    const batasPulang = now.day===5?720:900; // Jumat 12:00, Lainnya 15:00
+    const batasPulang = now.day===5?720:900;
     const jamPulangText = now.day===5?"12:00":"15:00";
 
     if(hasOut){
@@ -465,6 +524,58 @@ async function submitAttendance(status){
         updateButtons();
     }finally{
         button.textContent=status==="Hadir"?"✅ Presensi Masuk / Hadir":"🏠 Presensi Pulang";
+    }
+}
+
+async function submitIzinAdmin(){
+    const select = $("izinSelectPegawai");
+    const selectedOption = select.options[select.selectedIndex];
+    
+    if (!selectedOption) {
+        alert("Pilih pegawai terlebih dahulu!");
+        return;
+    }
+
+    const nik = select.value;
+    const nama = selectedOption.dataset.nama;
+    const role = selectedOption.dataset.role;
+    const rawDate = $("izinTanggal").value;
+    const jenis = $("izinStatus").value;
+
+    if (!rawDate) {
+        alert("Pilih tanggal terlebih dahulu!");
+        return;
+    }
+
+    const [year, month, day] = rawDate.split("-");
+    const formattedDate = `${parseInt(day, 10)}/${parseInt(month, 10)}/${year}`;
+
+    const btn = $("btnSubmitIzin");
+    btn.disabled = true;
+    btn.textContent = "Menyimpan...";
+
+    try {
+        const data = await apiRequest({
+            action: "inputIzin",
+            nik: nik,
+            nama: nama,
+            role: role,
+            tanggal: formattedDate,
+            jenis: jenis
+        });
+
+        if (data.status !== "success") {
+            throw new Error(data.message || "Gagal mencatat status.");
+        }
+
+        alert(data.message);
+        $("modalIzin").classList.add("hidden");
+        fetchData(filterAdminData);
+    } catch (err) {
+        alert("Kesalahan: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Simpan Status";
     }
 }
 
@@ -567,6 +678,16 @@ $("btnHadir").addEventListener("click",()=>submitAttendance("Hadir"));
 $("btnPulang").addEventListener("click",()=>submitAttendance("Pulang"));
 $("btnLogoutUser").addEventListener("click",logout);
 $("btnLogoutAdmin").addEventListener("click",logout);
+
+// Event Handlers Modal Input Sakit/Izin Admin
+$("btnOpenModalIzin").addEventListener("click",()=>{
+    $("izinTanggal").value = new Date().toISOString().slice(0,10);
+    $("modalIzin").classList.remove("hidden");
+});
+$("btnCloseModalIzin").addEventListener("click",()=>{
+    $("modalIzin").classList.add("hidden");
+});
+$("btnSubmitIzin").addEventListener("click",submitIzinAdmin);
 
 ["userFilterStartDate","userFilterEndDate"].forEach(id=>$(id).addEventListener("change",filterUserHistory));
 ["filterStartDate","filterEndDate","filterRole"].forEach(id=>$(id).addEventListener("change",filterAdminData));
