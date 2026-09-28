@@ -865,6 +865,9 @@
         <i class="fa-solid fa-location-dot"></i>
         <span id="statusText">Mendeteksi lokasi GPS...</span>
       </div>
+      <div id="attendanceNotice" role="status" aria-live="polite" style="margin: -5px 0 15px; padding: 10px 12px; border-radius: 12px; background: #F1F5F9; color: #475569; font-size: 11px; line-height: 1.5;">
+        Memeriksa riwayat presensi hari ini...
+      </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
         <button class="btn-primary" id="btnMasuk" onclick="doCheckin('Hadir')" disabled>
@@ -1076,6 +1079,10 @@
   let map, userMarker, circleOverlay;
   let currentLat = null, currentLng = null;
   let isWithinRadius = false;
+  let hasCheckedInToday = false;
+  let hasCheckedOutToday = false;
+  let attendanceStatusLoaded = false;
+  let attendanceStatusError = false;
   let allRekapRecords = [];
   let adminStaffList = [];
   let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -1208,6 +1215,7 @@
     setBottomNavActive("presensi");
     initMap();
     checkLocationAndStatus();
+    loadTodayAttendanceStatus();
   }
 
   function showChatPage() {
@@ -1347,17 +1355,80 @@
     }
   }
 
+  function attendanceDateKey(value) {
+    const datePart = String(value ?? "").split(",")[0].trim();
+    let match = datePart.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (match) return `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+    match = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (match) return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`;
+    return "";
+  }
+
+  function jakartaTodayKey() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  }
+
+  function hasAttendanceValue(value) {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    return normalized !== "" && normalized !== "-" && normalized !== "—" && !normalized.startsWith("belum");
+  }
+
+  function updateAttendanceNotice() {
+    const notice = document.getElementById("attendanceNotice");
+    const btnMasuk = document.getElementById("btnMasuk");
+    const btnPulang = document.getElementById("btnPulang");
+
+    btnMasuk.disabled = !isWithinRadius || !attendanceStatusLoaded || hasCheckedInToday;
+    btnPulang.disabled = !isWithinRadius || !attendanceStatusLoaded || !hasCheckedInToday || hasCheckedOutToday;
+
+    if (!attendanceStatusLoaded) {
+      notice.textContent = attendanceStatusError
+        ? "Riwayat presensi hari ini belum dapat diperiksa. Coba buka kembali halaman Presensi."
+        : "Memeriksa riwayat presensi hari ini...";
+      notice.style.background = "#F1F5F9";
+      notice.style.color = "#475569";
+      return;
+    }
+
+    const masukText = hasCheckedInToday ? "Presensi masuk sudah tercatat." : "Presensi masuk belum tercatat.";
+    const pulangText = hasCheckedOutToday ? "Presensi pulang sudah tercatat." : "Presensi pulang belum tercatat.";
+    notice.textContent = `${masukText} ${pulangText}`;
+    notice.style.background = hasCheckedInToday && hasCheckedOutToday ? "#DCFCE7" : "#EFF6FF";
+    notice.style.color = hasCheckedInToday && hasCheckedOutToday ? "#166534" : "#1D4ED8";
+  }
+
+  async function loadTodayAttendanceStatus() {
+    attendanceStatusLoaded = false;
+    attendanceStatusError = false;
+    hasCheckedInToday = false;
+    hasCheckedOutToday = false;
+    updateAttendanceNotice();
+
+    const res = await apiRequest({ action: "getRekap" });
+    if (res.status === "success" && Array.isArray(res.data)) {
+      const todayKey = jakartaTodayKey();
+      const todayRecords = res.data.filter(record => record && String(record.nik ?? "").trim() === String(currentUser?.nik ?? "").trim() && attendanceDateKey(record.timestamp) === todayKey);
+      hasCheckedInToday = todayRecords.some(record => hasAttendanceValue(record.masuk));
+      hasCheckedOutToday = todayRecords.some(record => hasAttendanceValue(record.pulang));
+      attendanceStatusLoaded = true;
+    } else {
+      attendanceStatusError = true;
+    }
+    updateAttendanceNotice();
+  }
+
   // Check Location GPS
   function checkLocationAndStatus() {
     const statusText = document.getElementById("statusText");
-    const btnMasuk = document.getElementById("btnMasuk");
-    const btnPulang = document.getElementById("btnPulang");
 
     currentLat = null;
     currentLng = null;
     isWithinRadius = false;
-    btnMasuk.disabled = true;
-    btnPulang.disabled = true;
+    updateAttendanceNotice();
     statusText.innerText = "Mendeteksi lokasi GPS...";
 
     if (!("geolocation" in navigator)) {
@@ -1381,11 +1452,10 @@
 
         if (isWithinRadius) {
           statusText.innerText = "Anda berada di dalam jangkauan lokasi.";
-          btnMasuk.disabled = false;
-          btnPulang.disabled = false;
         } else {
           statusText.innerText = `Luar jangkauan (${Math.round(dist)}m dari lokasi).`;
         }
+        updateAttendanceNotice();
       },
       () => {
         currentLat = null;
@@ -1430,13 +1500,12 @@
 
     const res = await apiRequest(payload);
 
-    btnMasuk.disabled = !isWithinRadius;
-    btnPulang.disabled = !isWithinRadius;
-
     if (res.status === "success") {
       alert(res.message);
       document.getElementById("statusText").innerText = res.message;
+      await loadTodayAttendanceStatus();
     } else {
+      updateAttendanceNotice();
       alert(res.message || "Gagal melakukan presensi.");
     }
   }
