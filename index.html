@@ -1,706 +1,1235 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geopresensi MAN Kota Lhokseumawe</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geopresensi MAN Kota Lhokseumawe</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <style>
-        *{box-sizing:border-box}
-        body{font-family:Segoe UI,Tahoma,sans-serif;background:#f0f3f4;margin:0;padding:20px;color:#333}
-        .container{max-width:1000px;margin:auto;background:#fff;padding:25px;border-radius:12px;box-shadow:0 4px 15px #0002}
-        h2{color:#16a085;text-align:center;margin:0 0 5px}
-        .subtitle{text-align:center;color:#7f8c8d;font-size:.9em;margin-bottom:20px}
-        .hidden{display:none!important}
-        .form-group{margin-bottom:15px}
-        label{display:block;font-weight:bold;margin-bottom:5px}
-        input,select{width:100%;padding:10px;border:1px solid #ccc;border-radius:6px}
-        button{width:100%;border:0;padding:12px;font-size:1em;font-weight:bold;border-radius:6px;cursor:pointer;margin-top:10px;color:#fff;background:#16a085}
-        button:hover{filter:brightness(.92)}
-        button:disabled{opacity:.55;cursor:not-allowed}
-        .btn-secondary{background:#e74c3c}
-        .btn-pdf{background:#e67e22}
-        .btn-hadir{background:#16a085}
-        .btn-pulang{background:#2980b9}
-        .btn-izin{background:#27ae60}
-        .btn-pulang:disabled,.btn-hadir:disabled{background:#95a5a6}
-        #status-box,#login-error{display:none;margin-top:15px;padding:12px;border-radius:6px;text-align:center}
-        .alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
-        .alert-danger{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
-        .alert-warning{background:#fff3cd;color:#856404;border:1px solid #ffeeba}
-        .info-lokasi{margin-bottom:20px;border:1px solid #ccebe4;border-radius:14px;background:#effbf8;overflow:hidden}
-        .info-header{display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid #d9eee9}
-        .user-avatar{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;color:#fff;font-size:1.3em;background:#16a085}
-        .welcome-text{min-width:0}.welcome-text small{display:block;color:#7f8c8d;font-size:.78em}
-        .welcome-text strong{display:block;overflow:hidden;color:#234b45;font-size:1.2em;text-overflow:ellipsis;white-space:nowrap}
-        .role-badge{margin-left:auto;padding:6px 12px;border-radius:20px;color:#117a65;background:#d7f5ed;font-size:.78em;font-weight:bold}
-        .info-content{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px 20px}
-        .info-item{display:flex;gap:10px;padding:12px;border:1px solid #e0f0ed;border-radius:10px;background:#fff}
-        .info-icon{font-size:1.2em}.info-label{display:block;color:#7f8c8d;font-size:.75em;font-weight:bold}
-        .info-value{display:block;color:#34495e;font-size:.88em;line-height:1.4}
-        .location-item{grid-column:1/-1}
-        #userRealLocation{color:#167d6c;font-weight:600}
-        #map{height:260px;margin:0 20px 20px;border-radius:10px;border:1px solid #ccebe4}
-        .presensi-panel{background:#fafafa;padding:15px;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:20px}
-        .button-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .button-grid button{margin-top:0}
-        .btn-hint{font-size:0.75em;color:#7f8c8d;margin-top:4px;text-align:center;display:block}
-        .table-responsive{width:100%;overflow-x:auto;margin-top:15px}
-        table{width:100%;border-collapse:collapse;font-size:.84em}
-        th,td{border:1px solid #ddd;padding:8px;text-align:left;white-space:nowrap}
-        th{background:#16a085;color:#fff}
-        .filter-box{background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #e0e0e0;margin-bottom:15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-        .toolbar{display:flex;gap:10px;flex-wrap:wrap}.toolbar button{flex:1;margin-top:0}
-        .section-title{border-top:2px solid #16a085;padding-top:15px;margin-top:30px}
+  <!-- jsPDF & AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
-        /* Modal Styles */
-        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999}
-        .modal-box{background:#fff;width:90%;max-width:450px;padding:25px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.3)}
-        .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:15px}
-        .modal-header h4{margin:0;color:#16a085}
-        .modal-footer{display:flex;gap:10px;margin-top:20px}
+  <style>
+    :root {
+      --primary: #4C77ED;
+      --primary-hover: #3b62d1;
+      --secondary: #00BFA5;
+      --bg-light: #F4F7FF;
+      --card-bg: #FFFFFF;
+      --text-main: #2D3748;
+      --text-muted: #718096;
+      --border-color: #E2E8F0;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --shadow: 0 10px 25px -5px rgba(76, 119, 237, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    }
 
-        @media(max-width:600px){
-            body{padding:10px}.container{padding:16px}.info-content{grid-template-columns:1fr}
-            .location-item{grid-column:auto}.button-grid{grid-template-columns:1fr}
-            .role-badge{font-size:.7em}.info-header{padding:15px}
-            #map{margin-left:15px;margin-right:15px}
-        }
-    </style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* Mobile Frame Wrapper */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: #F8FAFC;
+      min-height: 100vh;
+      position: relative;
+      box-shadow: 0 0 30px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-bottom: 70px;
+    }
+
+    /* Top Background Header */
+    .header-bg {
+      background: linear-gradient(135deg, #EBF3FF 0%, #DCE8FF 100%);
+      height: 170px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .header-bg::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23F8FAFC' fill-opacity='1' d='M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,202.7C672,203,768,181,864,181.3C960,181,1056,203,1152,192C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") bottom center/cover no-repeat;
+    }
+
+    .nav-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1E293B;
+      z-index: 2;
+    }
+
+    .nav-header i {
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    /* Floating Card */
+    .card-box {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin: -50px 18px 20px 18px;
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Input Fields */
+    .form-group {
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper i.prefix-icon {
+      position: absolute;
+      left: 16px;
+      color: #94A3B8;
+      font-size: 16px;
+    }
+
+    .input-wrapper i.toggle-pwd {
+      position: absolute;
+      right: 16px;
+      color: #94A3B8;
+      cursor: pointer;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px 12px 45px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+      background: #FAFAFA;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      background: #FFF;
+      box-shadow: 0 0 0 3px rgba(76, 119, 237, 0.15);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(76, 119, 237, 0.3);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:disabled {
+      background: #94A3B8;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-sso {
+      width: 100%;
+      padding: 13px;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Profile Chip & Greetings */
+    .user-profile-chip {
+      background: white;
+      padding: 8px 16px;
+      border-radius: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .user-profile-chip i {
+      background: #E2E8F0;
+      padding: 6px;
+      border-radius: 50%;
+      color: #64748B;
+    }
+
+    .greeting-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin: 15px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+
+    .btn-absensi-pill {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    /* Beranda: tautan madrasah dan kanal digital */
+    .quick-links-section {
+      padding: 0 18px 24px;
+      margin-top: 20px;
+    }
+
+    .quick-links-heading {
+      margin-bottom: 12px;
+    }
+
+    .quick-links-heading h3 {
+      font-size: 15px;
+      color: #1E293B;
+    }
+
+    .quick-links-heading p {
+      margin-top: 3px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .quick-links-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-link-card {
+      min-height: 96px;
+      padding: 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      background: white;
+      color: var(--text-main);
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .quick-link-card:hover,
+    .quick-link-card:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      outline: none;
+    }
+
+    .quick-link-icon {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 19px;
+    }
+
+    .quick-link-copy {
+      min-width: 0;
+    }
+
+    .quick-link-copy strong {
+      display: block;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .quick-link-copy span {
+      display: block;
+      margin-top: 3px;
+      color: var(--text-muted);
+      font-size: 9px;
+      line-height: 1.4;
+    }
+
+    /* Map Display */
+    #map {
+      height: 230px;
+      width: 100%;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      z-index: 1;
+    }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 15px 0;
+    }
+
+    .time-display .date-str {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .time-display .clock-str {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .status-badge {
+      background: #E2E8F0;
+      padding: 12px;
+      border-radius: 25px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    /* Bottom Sheet Modal */
+    .bottom-sheet-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 1000;
+    }
+
+    .bottom-sheet-modal.active {
+      display: flex;
+    }
+
+    .sheet-content {
+      background: white;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px 24px 0 0;
+      padding: 20px;
+      max-height: 80vh;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .sheet-content::-webkit-scrollbar {
+      display: none;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      background: #CBD5E1;
+      border-radius: 2px;
+      margin: 0 auto 15px auto;
+      cursor: pointer;
+    }
+
+    .history-card {
+      background: #F8FAFC;
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .history-card h4 {
+      font-size: 13px;
+      color: #1E293B;
+      margin-bottom: 4px;
+    }
+
+    .history-card p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .history-card span.time-value {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      border-top: 1px solid #E2E8F0;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 10px;
+      color: #94A3B8;
+      cursor: pointer;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .nav-item i {
+      font-size: 18px;
+      margin-bottom: 3px;
+    }
+
+    /* Admin Styles */
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .admin-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 1100;
+    }
+
+    .admin-modal.active {
+      display: flex;
+    }
+
+    .admin-modal-content {
+      width: 100%;
+      max-width: 420px;
+      padding: 22px;
+      border-radius: var(--radius-lg);
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .admin-modal-content select {
+      padding-left: 14px;
+      background: #FAFAFA;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    th, td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: #F1F5F9;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h2>GEOPRESENSI MAN KOTA LHOKSEUMAWE</h2>
-    <div class="subtitle">Sistem Kehadiran Guru & Tenaga Kependidikan</div>
 
-    <section id="loginSection">
-        <h3 style="text-align:center;color:#2c3e50">Silakan Login Terlebih Dahulu</h3>
-        <form id="loginForm">
-            <div class="form-group">
-                <label>NIK</label>
-                <input id="loginNik" type="text" maxlength="16" required placeholder="Masukkan NIK Anda">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input id="loginPassword" type="password" required placeholder="Masukkan Password Anda">
-            </div>
-            <button id="btnLogin">Masuk</button>
-        </form>
-        <div id="login-error" class="alert-danger"></div>
-    </section>
+<div class="app-container">
 
-    <section id="presensiSection" class="hidden">
-        <div class="info-lokasi">
-            <div class="info-header">
-                <div class="user-avatar">👤</div>
-                <div class="welcome-text">
-                    <small>Selamat datang kembali</small>
-                    <strong id="userDisplayName">Pengguna</strong>
-                </div>
-                <span class="role-badge" id="userDisplayRole">-</span>
-            </div>
-
-            <div class="info-content">
-                <div class="info-item">
-                    <div class="info-icon">🪪</div>
-                    <div><span class="info-label">NIK Pengguna</span><span class="info-value" id="userDisplayNik">-</span></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-icon">🏫</div>
-                    <div><span class="info-label">Lokasi Madrasah</span><span class="info-value">MAN Kota Lhokseumawe<br>Kampung Jawa Lama, Banda Sakti</span></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-icon">🕒</div>
-                    <div><span class="info-label">Jadwal Presensi</span><span class="info-value">Masuk sebelum 07:30 WIB<br>Pulang 15:00 WIB, Jumat 12:00 WIB</span></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-icon">📅</div>
-                    <div><span class="info-label">Hari Presensi</span><span class="info-value">Senin–Sabtu<br>Minggu dan hari libur tutup</span></div>
-                </div>
-                <div class="info-item location-item">
-                    <div class="info-icon">📍</div>
-                    <div><span class="info-label">Lokasi Anda Saat Ini</span><span class="info-value" id="userRealLocation">Mendeteksi lokasi perangkat...</span></div>
-                </div>
-            </div>
-            <div id="map"></div>
-        </div>
-
-        <div class="presensi-panel">
-            <h4 style="margin-top:0;color:#16a085">Presensi Hari Ini</h4>
-            <div class="button-grid">
-                <div>
-                    <button id="btnHadir" class="btn-hadir">✅ Presensi Masuk / Hadir</button>
-                    <span id="hintHadir" class="btn-hint"></span>
-                </div>
-                <div>
-                    <button id="btnPulang" class="btn-pulang">🏠 Presensi Pulang</button>
-                    <span id="hintPulang" class="btn-hint"></span>
-                </div>
-            </div>
-            <div id="status-box"></div>
-        </div>
-
-        <div class="section-title">
-            <h3 style="color:#2c3e50;margin-bottom:10px">Riwayat Presensi Saya</h3>
-            <div class="filter-box">
-                <div class="form-group" style="margin:0"><label>Dari Tanggal</label><input type="date" id="userFilterStartDate"></div>
-                <div class="form-group" style="margin:0"><label>Sampai Tanggal</label><input type="date" id="userFilterEndDate"></div>
-            </div>
-            <div class="toolbar">
-                <button class="btn-pdf" id="btnUserPDF">📑 Cetak PDF</button>
-            </div>
-            <div class="table-responsive">
-                <table id="tabelUserRiwayat">
-                    <thead><tr>
-                        <th>Hari, Tanggal</th><th>Status</th><th>Jam Masuk</th><th>Jam Pulang</th>
-                    </tr></thead>
-                    <tbody id="userRiwayatTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-        <button class="btn-secondary" id="btnLogoutUser">Keluar (Logout)</button>
-    </section>
-
-    <section id="adminSection" class="hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #16a085;padding-bottom:10px">
-            <h3 style="color:#2c3e50">Dashboard Admin - Rekap Presensi</h3>
-            <b id="adminNameDisplay" style="color:#16a085"></b>
-        </div>
-
-        <div class="filter-box">
-            <div class="form-group" style="margin:0"><label>Dari Tanggal</label><input type="date" id="filterStartDate"></div>
-            <div class="form-group" style="margin:0"><label>Sampai Tanggal</label><input type="date" id="filterEndDate"></div>
-            <div class="form-group" style="margin:0"><label>Cari Nama / NIK</label><input type="text" id="filterName"></div>
-            <div class="form-group" style="margin:0">
-                <label>Filter Role</label>
-                <select id="filterRole">
-                    <option value="">Semua Role</option>
-                    <option>Guru</option><option>Tendik</option><option>Admin</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="toolbar">
-            <button class="btn-izin" id="btnOpenModalIzin">➕ Input Sakit / Izin</button>
-            <button class="btn-pdf" id="btnAdminPDF">📑 Cetak PDF</button>
-            <button class="btn-secondary" id="btnLogoutAdmin">Keluar</button>
-        </div>
-
-        <div class="table-responsive">
-            <table id="tabelRekapHtml">
-                <thead><tr>
-                    <th>Hari, Tanggal</th><th>NIK</th><th>Nama</th><th>Role</th>
-                    <th>Status</th><th>Jam Masuk</th><th>Jam Pulang</th>
-                </tr></thead>
-                <tbody id="rekapTableBody"></tbody>
-            </table>
-        </div>
-    </section>
-</div>
-
-<!-- Modal Input Sakit/Izin Admin -->
-<div id="modalIzin" class="modal-overlay hidden">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h4>Form Input Sakit / Izin</h4>
-        </div>
-        <div class="form-group">
-            <label>Pilih Pegawai</label>
-            <select id="izinSelectPegawai"></select>
-        </div>
-        <div class="form-group">
-            <label>Tanggal</label>
-            <input type="date" id="izinTanggal">
-        </div>
-        <div class="form-group">
-            <label>Jenis Status</label>
-            <select id="izinStatus">
-                <option value="Sakit">Sakit</option>
-                <option value="Izin">Izin</option>
-            </select>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-secondary" id="btnCloseModalIzin">Batal</button>
-            <button type="button" class="btn-hadir" id="btnSubmitIzin">Simpan Status</button>
-        </div>
+  <!-- ==================== SECTION 1: LOGIN ==================== -->
+  <div id="loginSection">
+    <div class="header-bg" style="align-items: center; justify-content: center;">
+      <div style="text-align: center; margin-top: -40px;">
+        <!-- <i class="fa-solid fa-layer-group" style="font-size: 36px; color: var(--primary);"></i> -->
+        <h2 style="font-size: 20px; color: #1E293B; margin-top: 5px;">MAN Kota Lhokseumawe</h2>
+        <p style="font-size: 14px; color: #64748B;">Geopresensi Guru & Tendik</p>
+      </div>
     </div>
+
+    <div class="card-box">
+      <h3 style="text-align: center; font-size: 15px; margin-bottom: 5px;">Masuk ke Akun Presensi Anda</h3>
+      <div style="width: 40px; height: 3px; background: var(--primary); margin: 0 auto 20px auto; border-radius: 2px;"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <div class="input-wrapper">
+            <i class="fa-regular fa-user prefix-icon"></i>
+            <input type="text" id="loginNik" class="form-control" placeholder="Masukkan NIK Anda" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock prefix-icon"></i>
+            <input type="password" id="loginPassword" class="form-control" placeholder="Password" required>
+            <i class="fa-regular fa-eye toggle-pwd" onclick="togglePasswordVisibility()"></i>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 20px; color: var(--text-muted);">
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" checked style="accent-color: var(--primary);"> Ingat Saya
+          </label>
+          <a href="#" style="color: var(--primary); text-decoration: none;">Lupa Password?</a>
+        </div>
+
+        <button type="submit" class="btn-primary" id="btnLogin">Masuk</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 15px; font-size: 12px; color: var(--text-muted);">
+        Belum Punya Akun? <a href="#" style="color: var(--primary); font-weight: 600; text-decoration: none;">Daftar Sekarang</a>
+      </div>
+
+      <!-- <button class="btn-sso"><i class="fa-solid fa-shield-halved"></i> Masuk Dengan SSO Kemenag</button> -->
+    </div>
+  </div>
+
+  <!-- ==================== SECTION 2: BERANDA GURU/USER ==================== -->
+  <div id="userHomeSection" style="display: none;">
+    <div class="header-bg" style="height: 120px;">
+      <div class="user-profile-chip">
+        <i class="fa-solid fa-user"></i>
+        <span id="displayUserName">GURU MAN</span>
+      </div>
+    </div>
+
+    <div class="greeting-card">
+      <div>
+        <p style="font-size: 12px; color: #64748B;">Hi,</p>
+        <h3 id="greetingName" style="font-size: 14px; color: #1E293B;">NAMA GURU</h3>
+      </div>
+      <button class="btn-absensi-pill" onclick="showPresensiPage()">
+        <i class="fa-solid fa-fingerprint"></i> Absensi
+      </button>
+    </div>
+
+    <section class="quick-links-section" aria-labelledby="quickLinksTitle">
+      <div class="quick-links-heading">
+        <h3 id="quickLinksTitle">Jelajahi MAN Kota Lhokseumawe</h3>
+        <p>Akses cepat ke website, perpustakaan, dan kanal resmi madrasah.</p>
+      </div>
+      <div class="quick-links-grid">
+        <a class="quick-link-card" href="https://man-lhokseumawe-flame.vercel.app/" target="_blank" rel="noopener noreferrer">
+          <span class="quick-link-icon" style="background: linear-gradient(135deg, #4C77ED, #6D9BFF);"><i class="fa-solid fa-globe"></i></span>
+          <span class="quick-link-copy"><strong>Website MAN</strong><span>Informasi resmi madrasah</span></span>
+        </a>
+        <a class="quick-link-card" href="https://sites.google.com/view/login-perpus-man-lsw/halaman-login" target="_blank" rel="noopener noreferrer">
+          <span class="quick-link-icon" style="background: linear-gradient(135deg, #10B981, #34D399);"><i class="fa-solid fa-book-open"></i></span>
+          <span class="quick-link-copy"><strong>Perpustakaan</strong><span>Koleksi dan layanan pustaka</span></span>
+        </a>
+        <a class="quick-link-card" href="https://www.instagram.com/manlsm.official/" target="_blank" rel="noopener noreferrer">
+          <span class="quick-link-icon" style="background: linear-gradient(135deg, #F97316, #DB2777, #7C3AED);"><i class="fa-brands fa-instagram"></i></span>
+          <span class="quick-link-copy"><strong>Instagram</strong><span>Ikuti kabar dan kegiatan</span></span>
+        </a>
+        <a class="quick-link-card" href="https://www.tiktok.com/@manlsm.official" target="_blank" rel="noopener noreferrer">
+          <span class="quick-link-icon" style="background: linear-gradient(135deg, #111827, #374151);"><i class="fa-brands fa-tiktok"></i></span>
+          <span class="quick-link-copy"><strong>TikTok</strong><span>Video dan cerita madrasah</span></span>
+        </a>
+        <a class="quick-link-card" href="https://www.youtube.com/@manlsm.official" target="_blank" rel="noopener noreferrer">
+          <span class="quick-link-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);"><i class="fa-brands fa-youtube"></i></span>
+          <span class="quick-link-copy"><strong>YouTube</strong><span>Video dan dokumentasi</span></span>
+        </a>
+        <a class="quick-link-card" href="https://api.whatsapp.com/send/?phone=6285262820401" target="_blank" rel="noopener noreferrer">
+          <span class="quick-link-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);"><i class="fa-solid fa-envelope"></i></span>
+          <span class="quick-link-copy"><strong>Email & Kontak</strong><span>Cari alamat kontak resmi</span></span>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== SECTION 3: HALAMAN PRESENSI ==================== -->
+  <div id="presensiSection" style="display: none;">
+    <div class="header-bg" style="height: 80px;">
+      <div class="nav-header" onclick="showUserHome()">
+        <i class="fa-solid fa-chevron-left"></i>
+        <span>Presensi</span>
+      </div>
+    </div>
+
+    <div class="card-box" style="margin-top: -20px;">
+      <div id="map"></div>
+
+      <div class="time-display">
+        <span class="date-str" id="currentDateStr">-</span>
+        <span class="clock-str" id="clockStr">00:00</span>
+      </div>
+
+      <div class="status-badge" id="statusBadge">
+        <i class="fa-solid fa-location-dot"></i>
+        <span id="statusText">Mendeteksi lokasi GPS...</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+        <button class="btn-primary" id="btnMasuk" onclick="doCheckin('Hadir')" disabled>
+          <i class="fa-solid fa-right-to-bracket"></i> Masuk
+        </button>
+        <button class="btn-primary" id="btnPulang" onclick="doCheckin('Pulang')" style="background: #10B981;" disabled>
+          <i class="fa-solid fa-right-from-bracket"></i> Pulang
+        </button>
+      </div>
+
+      <button class="btn-primary" onclick="openHistorySheet()" style="background: #64748B;">
+        <i class="fa-solid fa-rotate-left"></i> Riwayat Presensi
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== SECTION 4: ADMIN DASHBOARD ==================== -->
+  <div id="adminSection" style="display: none; padding: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="font-size: 16px;">Dashboard Admin</h3>
+      <button onclick="logout()" style="background: #EF4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+        <i class="fa-solid fa-power-off"></i> Keluar
+      </button>
+    </div>
+
+    <input type="text" id="searchAdmin" class="form-control" placeholder="Cari Nama / NIK..." style="padding: 8px 12px; margin-bottom: 12px;" oninput="renderAdminTable()">
+
+    <div class="filter-grid">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="filterStartDate">Tanggal Awal</label>
+        <input type="date" id="filterStartDate" class="form-control" style="padding: 8px 12px;" onchange="renderAdminTable()">
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="filterEndDate">Tanggal Akhir</label>
+        <input type="date" id="filterEndDate" class="form-control" style="padding: 8px 12px;" onchange="renderAdminTable()">
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+      <button class="btn-primary" onclick="loadAdminDashboard()" style="padding: 8px; font-size: 11px; border-radius: 8px;">
+        <i class="fa-solid fa-rotate"></i> Refresh
+      </button>
+      <button class="btn-primary" onclick="exportPDF()" style="padding: 8px; font-size: 11px; border-radius: 8px; background: #10B981;">
+        <i class="fa-solid fa-file-pdf"></i> Export PDF
+      </button>
+      <button class="btn-primary" onclick="openModalIzin()" style="padding: 8px; font-size: 11px; border-radius: 8px; background: #F59E0B;">
+        + Input Izin
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Tanggal</th>
+            <th>Nama / NIK</th>
+            <th>Masuk</th>
+            <th>Pulang</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: INPUT IZIN ADMIN ==================== -->
+  <div class="admin-modal" id="izinModal" role="dialog" aria-modal="true" aria-labelledby="izinModalTitle">
+    <div class="admin-modal-content">
+      <h3 id="izinModalTitle" style="font-size: 16px; margin-bottom: 16px;">Input Izin / Sakit</h3>
+      <form id="izinForm" onsubmit="submitIzin(event)">
+        <div class="form-group">
+          <label for="izinPegawai">Pilih Guru / Tendik</label>
+          <select id="izinPegawai" class="form-control" required>
+            <option value="">Memuat daftar pegawai...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="izinJenis">Jenis Status</label>
+          <select id="izinJenis" class="form-control" required>
+            <option value="Sakit">Sakit</option>
+            <option value="Izin">Izin</option>
+          </select>
+        </div>
+        <p id="izinHelp" style="font-size: 11px; color: var(--text-muted); margin: -4px 0 14px;"></p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="closeModalIzin()" style="flex: 1; padding: 11px; border: 1px solid var(--border-color); border-radius: 24px; background: white; color: var(--text-main); cursor: pointer;">Batal</button>
+          <button type="submit" class="btn-primary" id="btnSimpanIzin" style="flex: 1;">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== BOTTOM SHEET: RIWAYAT PRESENSI ==================== -->
+  <div class="bottom-sheet-modal" id="historyModal">
+    <div class="sheet-content">
+      <div class="sheet-handle" onclick="closeHistorySheet()"></div>
+      <h3 style="font-size: 15px; margin-bottom: 15px; color: #1E293B;">Riwayat Presensi Saya</h3>
+
+      <div id="historyList">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <div class="bottom-nav" id="bottomNav" style="display: none;">
+    <div class="nav-item active" onclick="showUserHome()">
+      <i class="fa-solid fa-house"></i>
+      <span>Beranda</span>
+    </div>
+    <div class="nav-item">
+      <i class="fa-solid fa-headset"></i>
+      <span>Live Agent</span>
+    </div>
+    <div class="nav-item" onclick="showPresensiPage()">
+      <i class="fa-solid fa-border-all" style="font-size: 22px; color: var(--primary);"></i>
+      <span>Menu</span>
+    </div>
+    <div class="nav-item" onclick="openHistorySheet()">
+      <i class="fa-regular fa-calendar-days"></i>
+      <span>Kalender</span>
+    </div>
+    <div class="nav-item">
+      <i class="fa-regular fa-newspaper"></i>
+      <span>Berita</span>
+    </div>
+  </div>
+
 </div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const WEB_APP_URL="https://script.google.com/macros/s/AKfycbzHB8AewdQ3aBp6vyfGJxl5EO9F_BM3vZiF2ls7EYDwPhT6iVglxD7cuDKbsafvc8Sphw/exec";
-const LAT_MADRASAH=5.187779,LNG_MADRASAH=97.147981,MAX_RADIUS=500;
-let currentUser=null,globalRekapData=[],map,userMarker,userCoords=null;
+  // =========================================================
+  // CONFIG & CONSTANTS
+  // =========================================================
+  // Ganti URL Web App Google Apps Script Anda di bawah ini:
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHB8AewdQ3aBp6vyfGJxl5EO9F_BM3vZiF2ls7EYDwPhT6iVglxD7cuDKbsafvc8Sphw/exec";
+  
+  const LAT_MADRASAH = 5.187779;
+  const LNG_MADRASAH = 97.147981;
+  const MAX_RADIUS_METERS = 500;
 
-const $=id=>document.getElementById(id);
-const txt=v=>String(v??"");
+  let currentUser = null;
+  let map, userMarker, circleOverlay;
+  let currentLat = null, currentLng = null;
+  let isWithinRadius = false;
+  let allRekapRecords = [];
+  let adminStaffList = [];
 
-async function apiRequest(payload){
-    const response=await fetch(WEB_APP_URL,{
-        method:"POST",
-        headers:{"Content-Type":"text/plain;charset=utf-8"},
-        body:JSON.stringify(payload)
-    });
-    if(!response.ok)throw new Error(`HTTP ${response.status}`);
-    const data=await response.json();
-    if(!data||typeof data!=="object")throw new Error("Respons server tidak valid");
-    return data;
-}
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
 
-function showMessage(el,type,message){
-    el.className=type;
-    el.textContent=message;
-    el.style.display="block";
-}
-
-function getWibNow(){
-    const parts=new Intl.DateTimeFormat("en-US",{
-        timeZone:"Asia/Jakarta",weekday:"short",hour:"2-digit",minute:"2-digit",
-        hour12:false,year:"numeric",month:"2-digit",day:"2-digit"
-    }).formatToParts(new Date());
-    const x=Object.fromEntries(parts.map(p=>[p.type,p.value]));
-    return {
-        date:`${x.year}-${x.month}-${x.day}`,
-        day:{Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}[x.weekday],
-        hours:Number(x.hour),minutes:Number(x.minute)
-    };
-}
-
-function formatDateDisplay(dateKey){
-    if(!dateKey) return "-";
-    const date=new Date(`${dateKey}T00:00:00`);
-    if(isNaN(date.getTime())) return dateKey;
-    return date.toLocaleDateString("id-ID",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
-}
-
-function combineRecords(data){
-    const groups=new Map();
-
-    data.forEach(row=>{
-        const key=`${row.nik}|${row.dateKey}`;
-
-        if(!groups.has(key)){
-            groups.set(key,{
-                date:formatDateDisplay(row.dateKey),
-                dateKey:row.dateKey,
-                nik:row.nik,
-                nama:row.nama,
-                role:row.role,
-                status:row.status,
-                masuk:row.masuk !== "-" ? row.masuk : null,
-                pulang:row.pulang !== "-" ? row.pulang : null
-            });
-        }else{
-            const item=groups.get(key);
-            if(row.masuk !== "-") item.masuk = row.masuk;
-            if(row.pulang !== "-") item.pulang = row.pulang;
-            if(row.status !== "-") item.status = row.status;
-        }
-    });
-
-    return [...groups.values()].sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
-}
-
-function getUserRows(){
-    if(!currentUser)return[];
-    const start=$("userFilterStartDate").value;
-    const end=$("userFilterEndDate").value;
-
-    return combineRecords(globalRekapData.filter(x=>
-        x.nik===txt(currentUser.nik).trim() &&
-        (!start||x.dateKey>=start) &&
-        (!end||x.dateKey<=end)
-    ));
-}
-
-function getAdminRows(){
-    const start=$("filterStartDate").value;
-    const end=$("filterEndDate").value;
-    const query=$("filterName").value.toLowerCase().trim();
-    const role=$("filterRole").value;
-
-    return combineRecords(globalRekapData.filter(x=>{
-        return (!start||x.dateKey>=start)&&(!end||x.dateKey<=end)&&
-            (!query||x.nama.toLowerCase().includes(query)||x.nik.includes(query))&&
-            (!role||x.role===role);
-    }));
-}
-
-function renderTable(body,rows,admin=false){
-    body.replaceChildren();
-
-    if(!rows.length){
-        const tr=document.createElement("tr");
-        tr.innerHTML=`<td colspan="${admin?7:4}" style="text-align:center">Tidak ada data presensi ditemukan.</td>`;
-        body.appendChild(tr);
-        return;
-    }
-
-    rows.forEach(row=>{
-        const tr=document.createElement("tr");
-        const rowData = admin
-            ? [row.date, row.nik, row.nama, row.role, row.status, row.masuk||"-", row.pulang||"-"]
-            : [row.date, row.status, row.masuk||"-", row.pulang||"-"];
-
-        rowData.forEach(value=>{
-            const td=document.createElement("td");
-            td.textContent=value;
-            tr.appendChild(td);
-        });
-        body.appendChild(tr);
-    });
-}
-
-function filterUserHistory(){
-    renderTable($("userRiwayatTableBody"),getUserRows());
-    updateButtons();
-}
-
-function filterAdminData(){
-    renderTable($("rekapTableBody"),getAdminRows(),true);
-    populatePegawaiDropdown();
-}
-
-function populatePegawaiDropdown(){
-    const select = $("izinSelectPegawai");
-    select.innerHTML = "";
-    
-    // Ambil daftar unik pegawai dari globalRekapData
-    const mapPegawai = new Map();
-    globalRekapData.forEach(item => {
-        if(!mapPegawai.has(item.nik)){
-            mapPegawai.set(item.nik, { nik: item.nik, nama: item.nama, role: item.role });
-        }
-    });
-
-    mapPegawai.forEach(p => {
-        const opt = document.createElement("option");
-        opt.value = p.nik;
-        opt.dataset.nama = p.nama;
-        opt.dataset.role = p.role;
-        opt.textContent = `${p.nama} (${p.nik})`;
-        select.appendChild(opt);
-    });
-}
-
-async function fetchData(callback){
-    try{
-        const data=await apiRequest({action:"getRekap"});
-        if(data.status!=="success"||!Array.isArray(data.data)){
-            throw new Error("Data rekap tidak valid");
-        }
-        globalRekapData=data.data;
-        callback();
-    }catch(error){
-        console.error(error);
-        alert("Gagal memuat data rekap.");
-    }
-}
-
-function todayUserRows(){
-    return combineRecords(globalRekapData.filter(x=>
-        x.nik===txt(currentUser.nik).trim()&&x.dateKey===getWibNow().date
-    ));
-}
-
-function updateButtons(){
-    const now=getWibNow(),rows=todayUserRows(),today=rows[0];
-    const hasIn=Boolean(today?.masuk),hasOut=Boolean(today?.pulang);
-    const total=now.hours*60+now.minutes;
-
-    const btnHadir=$("btnHadir"), btnPulang=$("btnPulang");
-    const hintHadir=$("hintHadir"), hintPulang=$("hintPulang");
-
-    if(now.day===0){
-        btnHadir.disabled=true; btnPulang.disabled=true;
-        hintHadir.textContent="Hari Minggu Libur"; hintPulang.textContent="Hari Minggu Libur";
-        return;
-    }
-
-    if(hasIn){
-        btnHadir.disabled=true;
-        hintHadir.textContent="Sudah presensi masuk";
-    }else if(total>=450){
-        btnHadir.disabled=true;
-        hintHadir.textContent="Batas waktu masuk (07:30) terlewati";
-    }else{
-        btnHadir.disabled=false;
-        hintHadir.textContent="Tersedia sebelum 07:30 WIB";
-    }
-
-    const batasPulang = now.day===5?720:900;
-    const jamPulangText = now.day===5?"12:00":"15:00";
-
-    if(hasOut){
-        btnPulang.disabled=true;
-        hintPulang.textContent="Sudah presensi pulang";
-    }else if(!hasIn){
-        btnPulang.disabled=true;
-        hintPulang.textContent="Belum presensi masuk";
-    }else if(total<batasPulang){
-        btnPulang.disabled=true;
-        hintPulang.textContent=`Tersedia mulai pukul ${jamPulangText} WIB`;
-    }else{
-        btnPulang.disabled=false;
-        hintPulang.textContent="Tersedia untuk presensi pulang";
-    }
-}
-
-function initMap(){
-    if(map)return;
-    map=L.map("map").setView([LAT_MADRASAH,LNG_MADRASAH],16);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
-        attribution:"© OpenStreetMap"
-    }).addTo(map);
-    L.marker([LAT_MADRASAH,LNG_MADRASAH]).addTo(map).bindPopup("MAN Kota Lhokseumawe");
-}
-
-function detectLocation(){
-    initMap();
-    if(!navigator.geolocation){
-        $("userRealLocation").textContent="Geolocation tidak didukung browser.";
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(position=>{
-        const {latitude:lat,longitude:lng}=position.coords;
-        userCoords={lat,lng};
-        $("userRealLocation").textContent=`Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`;
-
-        if(userMarker) userMarker.setLatLng([lat,lng]);
-        else userMarker=L.marker([lat,lng]).addTo(map).bindPopup("Lokasi Anda");
-
-        map.setView([lat,lng],17);
-    },()=>{
-        $("userRealLocation").textContent="Gagal mendapatkan lokasi GPS.";
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
-}
-
-async function submitAttendance(status){
-    const box=$("status-box"),now=getWibNow();
-    const total=now.hours*60+now.minutes;
-    const rows=todayUserRows(),today=rows[0];
-
-    if(!userCoords){
-        showMessage(box,"alert-danger","Lokasi belum tersedia. Aktifkan GPS Anda.");
-        detectLocation();
-        return;
-    }
-
-    const button=status==="Hadir"?$("btnHadir"):$("btnPulang");
-    button.disabled=true;
-    button.textContent="Mengirim presensi...";
-
-    try{
-        const distance=hitungJarak(userCoords.lat,userCoords.lng,LAT_MADRASAH,LNG_MADRASAH);
-
-        if(status==="Hadir"&&distance>MAX_RADIUS){
-            throw new Error(`Anda berada di luar radius madrasah (${Math.round(distance)} meter).`);
-        }
-
-        const data=await apiRequest({
-            action:"checkin",
-            timestamp:new Date().toLocaleString("id-ID",{timeZone:"Asia/Jakarta"}),
-            nik:currentUser.nik,
-            nama:currentUser.nama,
-            role:currentUser.role,
-            status,
-            latitude:userCoords.lat,
-            longitude:userCoords.lng
-        });
-
-        if(data.status!=="success"){
-            throw new Error(data.message||"Presensi ditolak server.");
-        }
-
-        showMessage(box,"alert-success",`Presensi ${status==="Hadir"?"masuk":"pulang"} berhasil dicatat.`);
-        await fetchData(filterUserHistory);
-    }catch(error){
-        showMessage(box,"alert-danger",error.message||"Presensi gagal dikirim.");
-        updateButtons();
-    }finally{
-        button.textContent=status==="Hadir"?"✅ Presensi Masuk / Hadir":"🏠 Presensi Pulang";
-    }
-}
-
-async function submitIzinAdmin(){
-    const select = $("izinSelectPegawai");
-    const selectedOption = select.options[select.selectedIndex];
-    
-    if (!selectedOption) {
-        alert("Pilih pegawai terlebih dahulu!");
-        return;
-    }
-
-    const nik = select.value;
-    const nama = selectedOption.dataset.nama;
-    const role = selectedOption.dataset.role;
-    const rawDate = $("izinTanggal").value;
-    const jenis = $("izinStatus").value;
-
-    if (!rawDate) {
-        alert("Pilih tanggal terlebih dahulu!");
-        return;
-    }
-
-    const [year, month, day] = rawDate.split("-");
-    const formattedDate = `${parseInt(day, 10)}/${parseInt(month, 10)}/${year}`;
-
-    const btn = $("btnSubmitIzin");
-    btn.disabled = true;
-    btn.textContent = "Menyimpan...";
-
+  // API Call Handler
+  async function apiRequest(payload) {
     try {
-        const data = await apiRequest({
-            action: "inputIzin",
-            nik: nik,
-            nama: nama,
-            role: role,
-            tanggal: formattedDate,
-            jenis: jenis
-        });
-
-        if (data.status !== "success") {
-            throw new Error(data.message || "Gagal mencatat status.");
-        }
-
-        alert(data.message);
-        $("modalIzin").classList.add("hidden");
-        fetchData(filterAdminData);
+      const response = await fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      return await response.json();
     } catch (err) {
-        alert("Kesalahan: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "Simpan Status";
+      console.error("API Error:", err);
+      return { status: "error", message: "Gagal terhubung ke server." };
     }
-}
+  }
 
-function hitungJarak(lat1,lon1,lat2,lon2){
-    const r=x=>x*Math.PI/180,R=6371000;
-    const dLat=r(lat2-lat1),dLon=r(lon2-lon1);
-    const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
+  // Toggle Password Visiblity
+  function togglePasswordVisibility() {
+    const pwdInput = document.getElementById("loginPassword");
+    const icon = document.querySelector(".toggle-pwd");
+    if (pwdInput.type === "password") {
+      pwdInput.type = "text";
+      icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+      pwdInput.type = "password";
+      icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+  }
 
-function exportPDF(rows,admin=false){
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF("l","mm","a4");
-
-    doc.setFontSize(14);
-    doc.setTextColor(22,160,133);
-    doc.text("MAN KOTA LHOKSEUMAWE",148,15,{align:"center"});
-
-    doc.setFontSize(11);
-    doc.setTextColor(40,40,40);
-    doc.text("Rekapitulasi Kehadiran Guru & Tenaga Kependidikan",148,23,{align:"center"});
-
-    const headers=admin
-        ?[["Hari, Tanggal","NIK","Nama","Role","Status","Jam Masuk","Jam Pulang"]]
-        :[["Hari, Tanggal","Status","Jam Masuk","Jam Pulang"]];
-
-    const bodyData = rows.map(row => admin 
-        ? [row.date, row.nik, row.nama, row.role, row.status, row.masuk||"-", row.pulang||"-"]
-        : [row.date, row.status, row.masuk||"-", row.pulang||"-"]
-    );
-
-    doc.autoTable({
-        startY:32,
-        head:headers,
-        body:bodyData,
-        theme:"grid",
-        headStyles:{fillColor:[22,160,133]},
-        styles:{fontSize:8}
+  // Realtime Clock Display
+  function updateClock() {
+    const now = new Date();
+    const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' };
+    const dateStr = now.toLocaleDateString('id-ID', optionsDate);
+    const clockStr = now.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZone: 'Asia/Jakarta'
     });
 
-    const nowStr = new Date().toISOString().slice(0,10);
-    doc.save(`${admin?"Rekap_Presensi":"Riwayat_Presensi"}_${nowStr}.pdf`);
-}
+    document.getElementById("currentDateStr").innerText = dateStr;
+    document.getElementById("clockStr").innerText = clockStr;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 
-function logout(){
-    currentUser=null;
-    globalRekapData=[];
-    userCoords=null;
+  // Handle Login
+  async function handleLogin(e) {
+    e.preventDefault();
+    const nik = document.getElementById("loginNik").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+    const btn = document.getElementById("btnLogin");
 
-    if(userMarker && map) {
-        map.removeLayer(userMarker);
-        userMarker = null;
+    btn.disabled = true;
+    btn.innerText = "Memproses...";
+
+    const res = await apiRequest({ action: "login", nik, password });
+    btn.disabled = false;
+    btn.innerText = "Masuk";
+
+    if (res.status === "success") {
+      currentUser = res.user;
+      document.getElementById("loginSection").style.display = "none";
+
+      if (currentUser.role === "Admin") {
+        document.getElementById("adminSection").style.display = "block";
+        loadAdminDashboard();
+      } else {
+        document.getElementById("displayUserName").innerText = currentUser.nama;
+        document.getElementById("greetingName").innerText = currentUser.nama;
+        document.getElementById("bottomNav").style.display = "flex";
+        showUserHome();
+      }
+    } else {
+      alert(res.message || "Login gagal. Periksa NIK dan Password.");
+    }
+  }
+
+  function logout() {
+    currentUser = null;
+    document.getElementById("adminSection").style.display = "none";
+    document.getElementById("userHomeSection").style.display = "none";
+    document.getElementById("presensiSection").style.display = "none";
+    document.getElementById("bottomNav").style.display = "none";
+    document.getElementById("loginSection").style.display = "block";
+  }
+
+  // Section Navigations
+  function showUserHome() {
+    document.getElementById("presensiSection").style.display = "none";
+    document.getElementById("userHomeSection").style.display = "block";
+  }
+
+  function showPresensiPage() {
+    document.getElementById("userHomeSection").style.display = "none";
+    document.getElementById("presensiSection").style.display = "block";
+    initMap();
+    checkLocationAndStatus();
+  }
+
+  // Haversine Distance Formula
+  function hitungJarak(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  // Initialize Map
+  function initMap() {
+    if (!map) {
+      map = L.map('map').setView([LAT_MADRASAH, LNG_MADRASAH], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      // Area Radius Sekolah
+      circleOverlay = L.circle([LAT_MADRASAH, LNG_MADRASAH], {
+        color: '#4C77ED',
+        fillColor: '#4C77ED',
+        fillOpacity: 0.15,
+        radius: MAX_RADIUS_METERS
+      }).addTo(map);
+    }
+  }
+
+  // Check Location GPS
+  function checkLocationAndStatus() {
+    const statusText = document.getElementById("statusText");
+    const btnMasuk = document.getElementById("btnMasuk");
+    const btnPulang = document.getElementById("btnPulang");
+
+    currentLat = null;
+    currentLng = null;
+    isWithinRadius = false;
+    btnMasuk.disabled = true;
+    btnPulang.disabled = true;
+    statusText.innerText = "Mendeteksi lokasi GPS...";
+
+    if (!("geolocation" in navigator)) {
+      statusText.innerText = "Browser tidak mendukung lokasi GPS.";
+      return;
     }
 
-    $("loginForm").reset();
-    $("loginSection").classList.remove("hidden");
-    $("presensiSection").classList.add("hidden");
-    $("adminSection").classList.add("hidden");
-}
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        currentLat = pos.coords.latitude;
+        currentLng = pos.coords.longitude;
 
-$("loginForm").addEventListener("submit",async event=>{
+        if (userMarker) map.removeLayer(userMarker);
+        userMarker = L.marker([currentLat, currentLng]).addTo(map)
+          .bindPopup("Lokasi Anda").openPopup();
+
+        map.panTo([currentLat, currentLng]);
+
+        const dist = hitungJarak(currentLat, currentLng, LAT_MADRASAH, LNG_MADRASAH);
+        isWithinRadius = dist <= MAX_RADIUS_METERS;
+
+        if (isWithinRadius) {
+          statusText.innerText = "Anda berada di dalam jangkauan lokasi.";
+          btnMasuk.disabled = false;
+          btnPulang.disabled = false;
+        } else {
+          statusText.innerText = `Luar jangkauan (${Math.round(dist)}m dari lokasi).`;
+        }
+      },
+      () => {
+        currentLat = null;
+        currentLng = null;
+        isWithinRadius = false;
+        if (userMarker) {
+          map.removeLayer(userMarker);
+          userMarker = null;
+        }
+        statusText.innerText = "Gagal mendapatkan lokasi GPS.";
+      },
+      { enableHighAccuracy: true }
+    );
+  }
+
+  // Execute Checkin (Masuk / Pulang)
+  async function doCheckin(statusPresensi) {
+    if (!isWithinRadius || currentLat === null || currentLng === null) {
+      alert("Lokasi Anda tidak valid atau di luar radius madrasah!");
+      return;
+    }
+
+    const btnMasuk = document.getElementById("btnMasuk");
+    const btnPulang = document.getElementById("btnPulang");
+    btnMasuk.disabled = true;
+    btnPulang.disabled = true;
+
+    const now = new Date();
+    // Format timestamp D/M/YYYY, HH.mm.ss sesuai Kode.gs
+    const timestampStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}, ${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}.${String(now.getSeconds()).padStart(2, '0')}`;
+
+    const payload = {
+      action: "checkin",
+      nik: currentUser.nik,
+      nama: currentUser.nama,
+      role: currentUser.role,
+      status: statusPresensi, // "Hadir" atau "Pulang"
+      timestamp: timestampStr,
+      latitude: currentLat,
+      longitude: currentLng
+    };
+
+    const res = await apiRequest(payload);
+
+    btnMasuk.disabled = !isWithinRadius;
+    btnPulang.disabled = !isWithinRadius;
+
+    if (res.status === "success") {
+      alert(res.message);
+      document.getElementById("statusText").innerText = res.message;
+    } else {
+      alert(res.message || "Gagal melakukan presensi.");
+    }
+  }
+
+  // Open & Render History Bottom Sheet
+  async function openHistorySheet() {
+    document.getElementById("historyModal").classList.add("active");
+    const historyList = document.getElementById("historyList");
+    historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Memuat riwayat...</p>";
+
+    const res = await apiRequest({ action: "getRekap" });
+
+    if (res.status === "success" && Array.isArray(res.data) && res.data.length > 0) {
+      // Filter hanya data user yang sedang login
+      const myData = res.data.filter(r => r.nik === currentUser.nik);
+
+      if (myData.length > 0) {
+        historyList.innerHTML = myData.reverse().map(item => `
+          <div class="history-card">
+            <h4>${escapeHTML(item.timestamp)}</h4>
+            <p>Status : <b>${escapeHTML(item.status)}</b></p>
+            <p>Jam Masuk : <span class="time-value">${escapeHTML(item.masuk)}</span> | Jam Pulang : <span class="time-value">${escapeHTML(item.pulang)}</span></p>
+          </div>
+        `).join("");
+      } else {
+        historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Belum ada data presensi.</p>";
+      }
+    } else {
+      historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Gagal mengambil data riwayat.</p>";
+    }
+  }
+
+  function closeHistorySheet() {
+    document.getElementById("historyModal").classList.remove("active");
+  }
+
+  // Admin Dashboard Functions
+  async function loadAdminDashboard() {
+    const tbody = document.getElementById("adminTableBody");
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Memuat data...</td></tr>";
+
+    const res = await apiRequest({ action: "getRekap" });
+    if (res.status === "success" && Array.isArray(res.data)) {
+      allRekapRecords = res.data;
+      renderAdminTable();
+    } else {
+      tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:red;'>Gagal memuat data.</td></tr>";
+    }
+  }
+
+  function renderAdminTable() {
+    const tbody = document.getElementById("adminTableBody");
+    const search = document.getElementById("searchAdmin").value.trim().toLowerCase();
+    const startDate = document.getElementById("filterStartDate").value;
+    const endDate = document.getElementById("filterEndDate").value;
+
+    const filtered = allRekapRecords.filter(r => {
+      if (!r) return false;
+      const nama = String(r.nama ?? "").toLowerCase();
+      const nik = String(r.nik ?? "").toLowerCase();
+      const matchesSearch = nama.includes(search) || nik.includes(search);
+      const dateParts = String(r.timestamp ?? "").split(",")[0].trim().split(/[/-]/);
+      let recordDate = "";
+      if (dateParts.length === 3) {
+        const [first, second, third] = dateParts;
+        recordDate = third.length === 4
+          ? `${third}-${second.padStart(2, "0")}-${first.padStart(2, "0")}`
+          : `${first}-${second.padStart(2, "0")}-${third.padStart(2, "0")}`;
+      }
+      const matchesDate = (!startDate || (recordDate && recordDate >= startDate)) &&
+        (!endDate || (recordDate && recordDate <= endDate));
+      return matchesSearch && matchesDate;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Tidak ada data.</td></tr>";
+      return;
+    }
+
+    tbody.innerHTML = filtered.reverse().map((r, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${escapeHTML(String(r.timestamp ?? "").split(',')[0])}</td>
+        <td><b>${escapeHTML(r.nama)}</b><br><small>${escapeHTML(r.nik)}</small></td>
+        <td>${escapeHTML(r.masuk)}</td>
+        <td>${escapeHTML(r.pulang)}</td>
+        <td><span style="color:var(--primary); font-weight:600;">${escapeHTML(r.status)}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  // Admin: Pilih pegawai dari data rekap, lalu catat izin / sakit
+  async function openModalIzin() {
+    const modal = document.getElementById("izinModal");
+    const select = document.getElementById("izinPegawai");
+    const help = document.getElementById("izinHelp");
+    const submitButton = document.getElementById("btnSimpanIzin");
+
+    modal.classList.add("active");
+    select.disabled = true;
+    submitButton.disabled = true;
+    select.innerHTML = '<option value="">Memuat daftar pegawai...</option>';
+    help.innerText = "";
+
+    const res = await apiRequest({ action: "getRekap" });
+    if (res.status !== "success" || !Array.isArray(res.data)) {
+      select.innerHTML = '<option value="">Daftar pegawai gagal dimuat</option>';
+      help.innerText = res.message || "Periksa koneksi, lalu coba lagi.";
+      return;
+    }
+
+    allRekapRecords = res.data;
+    adminStaffList = [...new Map(
+      res.data
+        .filter(record => record && String(record.nik ?? "").trim() && String(record.nama ?? "").trim())
+        .map(record => [String(record.nik).trim(), {
+          nik: String(record.nik).trim(),
+          nama: String(record.nama).trim()
+        }])
+    ).values()].sort((a, b) => a.nama.localeCompare(b.nama, "id"));
+
+    if (adminStaffList.length === 0) {
+      select.innerHTML = '<option value="">Belum ada data pegawai</option>';
+      help.innerText = "Daftar ini diambil dari data rekap presensi. Belum ada pegawai yang tercatat.";
+      return;
+    }
+
+    select.innerHTML = '<option value="">-- Pilih nama guru / tendik --</option>' +
+      adminStaffList.map(staff => `<option value="${escapeHTML(staff.nik)}">${escapeHTML(staff.nama)} — ${escapeHTML(staff.nik)}</option>`).join("");
+    select.disabled = false;
+    submitButton.disabled = false;
+    help.innerText = "Daftar diambil dari nama pegawai yang sudah tercatat pada rekap presensi.";
+  }
+
+  function closeModalIzin() {
+    document.getElementById("izinModal").classList.remove("active");
+  }
+
+  async function submitIzin(event) {
     event.preventDefault();
-    const button=$("btnLogin"), error=$("login-error");
-    button.disabled=true; button.textContent="Memeriksa Akun...";
-
-    try{
-        const data=await apiRequest({
-            action:"login",
-            nik:$("loginNik").value.trim(),
-            password:$("loginPassword").value.trim()
-        });
-
-        if(data.status!=="success"||!data.user){
-            throw new Error(data.message||"NIK atau password salah.");
-        }
-
-        currentUser=data.user;
-        $("loginSection").classList.add("hidden");
-
-        if(txt(currentUser.role).toLowerCase()==="admin"){
-            $("adminSection").classList.remove("hidden");
-            $("adminNameDisplay").textContent=`${currentUser.nama} (${currentUser.role})`;
-            fetchData(filterAdminData);
-        }else{
-            $("presensiSection").classList.remove("hidden");
-            $("userDisplayName").textContent=currentUser.nama;
-            $("userDisplayNik").textContent=currentUser.nik;
-            $("userDisplayRole").textContent=currentUser.role;
-            detectLocation();
-            fetchData(filterUserHistory);
-        }
-    }catch(errorObject){
-        showMessage(error,"alert-danger",errorObject.message);
-    }finally{
-        button.disabled=false; button.textContent="Masuk";
+    const nik = document.getElementById("izinPegawai").value;
+    const jenis = document.getElementById("izinJenis").value;
+    const pegawai = adminStaffList.find(staff => staff.nik === nik);
+    if (!pegawai) {
+      alert("Pilih nama guru atau tendik terlebih dahulu.");
+      return;
     }
-});
 
-$("btnHadir").addEventListener("click",()=>submitAttendance("Hadir"));
-$("btnPulang").addEventListener("click",()=>submitAttendance("Pulang"));
-$("btnLogoutUser").addEventListener("click",logout);
-$("btnLogoutAdmin").addEventListener("click",logout);
+    const submitButton = document.getElementById("btnSimpanIzin");
+    submitButton.disabled = true;
+    submitButton.innerText = "Menyimpan...";
 
-// Event Handlers Modal Input Sakit/Izin Admin
-$("btnOpenModalIzin").addEventListener("click",()=>{
-    $("izinTanggal").value = new Date().toISOString().slice(0,10);
-    $("modalIzin").classList.remove("hidden");
-});
-$("btnCloseModalIzin").addEventListener("click",()=>{
-    $("modalIzin").classList.add("hidden");
-});
-$("btnSubmitIzin").addEventListener("click",submitIzinAdmin);
+    const now = new Date();
+    const dateStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
+    const res = await apiRequest({
+      action: "inputIzin",
+      nik: pegawai.nik,
+      nama: pegawai.nama,
+      role: "Guru/Staff",
+      tanggal: dateStr,
+      jenis
+    });
 
-["userFilterStartDate","userFilterEndDate"].forEach(id=>$(id).addEventListener("change",filterUserHistory));
-["filterStartDate","filterEndDate","filterRole"].forEach(id=>$(id).addEventListener("change",filterAdminData));
-
-$("filterName").addEventListener("input",filterAdminData);
-$("btnUserPDF").addEventListener("click",()=>exportPDF(getUserRows()));
-$("btnAdminPDF").addEventListener("click",()=>exportPDF(getAdminRows(),true));
-
-setInterval(()=>{
-    if(currentUser&&!$("presensiSection").classList.contains("hidden")){
-        updateButtons();
+    submitButton.disabled = false;
+    submitButton.innerText = "Simpan";
+    if (res.status === "success") {
+      closeModalIzin();
+      document.getElementById("izinForm").reset();
+      alert(res.message);
+      loadAdminDashboard();
+    } else {
+      alert(res.message || "Gagal mencatat izin.");
     }
-},15000);
+  }
+
+  // Export PDF
+  function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Rekapitulasi Presensi Guru & Tendik MAN Kota Lhokseumawe", 14, 15);
+    doc.autoTable({
+      html: 'table',
+      startY: 20
+    });
+    doc.save(`Rekap_Presensi_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
 </script>
 </body>
 </html>
