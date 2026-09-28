@@ -201,6 +201,14 @@
     }
 
     /* Profile Chip & Greetings */
+    .user-header-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 2;
+    }
+
     .user-profile-chip {
       background: white;
       padding: 8px 16px;
@@ -211,6 +219,26 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       font-size: 13px;
       font-weight: 600;
+      min-width: 0;
+      max-width: calc(100% - 95px);
+    }
+
+    .user-profile-chip span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-user-logout {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 20px;
+      background: #EF4444;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .user-profile-chip i {
@@ -406,6 +434,15 @@
       to { transform: translateY(0); }
     }
 
+    .history-sheet-header {
+      position: sticky;
+      top: -20px;
+      z-index: 3;
+      margin: -20px -20px 15px;
+      padding: 20px 20px 0;
+      background: white;
+    }
+
     .sheet-handle {
       width: 40px;
       height: 4px;
@@ -454,16 +491,31 @@
     }
 
     .nav-item {
+      min-width: 56px;
+      padding: 5px 8px;
+      border: 0;
+      border-radius: 14px;
+      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
       font-size: 10px;
       color: #94A3B8;
+      text-decoration: none;
       cursor: pointer;
+      transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-item:hover,
+    .nav-item:focus-visible {
+      color: var(--primary);
+      background: #F1F5FF;
+      outline: none;
     }
 
     .nav-item.active {
       color: var(--primary);
+      background: #EEF3FF;
       font-weight: 600;
     }
 
@@ -472,12 +524,105 @@
       margin-bottom: 3px;
     }
 
+    .nav-item.active i {
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 360px) {
+      .nav-item {
+        min-width: 48px;
+        padding: 5px 4px;
+        font-size: 9px;
+      }
+    }
+
+    /* Halaman Live Agent, Kalender, dan Informasi */
+    .utility-page {
+      display: none;
+      padding: 18px 18px 28px;
+    }
+
+    .utility-page.active { display: block; }
+
+    .page-title-card {
+      padding: 20px;
+      margin-bottom: 14px;
+      border-radius: var(--radius-lg);
+      color: white;
+      background: linear-gradient(135deg, #4C77ED, #7C5CFA);
+      box-shadow: var(--shadow);
+    }
+
+    .page-title-card h2 { font-size: 18px; }
+    .page-title-card p { margin-top: 5px; font-size: 11px; opacity: .9; }
+
+    .chat-card, .calendar-card, .guide-card {
+      padding: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, .04);
+    }
+
+    .chat-card { display: flex; flex-direction: column; min-height: 390px; }
+    .chat-messages { flex: 1; max-height: 310px; overflow-y: auto; padding: 4px 2px 12px; }
+    .chat-message { width: fit-content; max-width: 88%; padding: 10px 12px; margin-bottom: 9px; border-radius: 14px; font-size: 11px; line-height: 1.5; }
+    .chat-message.bot { background: #F1F5F9; color: #334155; border-bottom-left-radius: 4px; }
+    .chat-message.user { margin-left: auto; background: #4C77ED; color: white; border-bottom-right-radius: 4px; }
+    .chat-form { display: flex; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 12px; }
+    .chat-form input { min-width: 0; flex: 1; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; font-size: 12px; }
+    .chat-form button { width: 42px; border: 0; border-radius: 50%; color: white; background: var(--primary); cursor: pointer; }
+    .chat-shortcuts { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 12px; }
+    .chat-shortcuts button { padding: 7px 10px; border: 1px solid #DCE5FF; border-radius: 20px; background: #F4F7FF; color: var(--primary); font-size: 10px; cursor: pointer; }
+
+    .calendar-card { padding: 18px; }
+    .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .calendar-controls h3 { font-size: 14px; }
+    .calendar-controls button { width: 34px; height: 34px; border: 0; border-radius: 50%; background: #EEF3FF; color: var(--primary); cursor: pointer; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+    .calendar-weekday { padding: 6px 0; color: var(--text-muted); font-size: 10px; font-weight: 600; }
+    .calendar-day { min-height: 38px; border: 0; border-radius: 11px; background: transparent; color: var(--text-main); font-size: 11px; cursor: pointer; }
+    .calendar-day:hover { background: #EEF3FF; }
+    .calendar-day.today { background: #4C77ED; color: white; font-weight: 700; }
+    .calendar-day.selected:not(.today) { box-shadow: inset 0 0 0 2px var(--primary); color: var(--primary); font-weight: 700; }
+    .calendar-day.empty { cursor: default; }
+    .calendar-selection { margin-top: 14px; padding: 12px; border-radius: 12px; background: #F8FAFC; color: #475569; font-size: 11px; }
+
+    .guide-card { margin-bottom: 10px; display: flex; gap: 12px; align-items: flex-start; }
+    .guide-number { flex: 0 0 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: #EEF3FF; color: var(--primary); font-weight: 700; }
+    .guide-card h3 { margin: 1px 0 4px; font-size: 12px; }
+    .guide-card p { color: var(--text-muted); font-size: 10px; line-height: 1.6; }
+
     /* Admin Styles */
+    .app-container.admin-mode {
+      width: 100%;
+      max-width: 1200px;
+      padding-bottom: 32px;
+      overflow-x: visible;
+    }
+
+    #adminSection {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
     .filter-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 15px;
+    }
+
+    .admin-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .admin-actions .btn-primary {
+      flex: 1;
+      min-width: 0;
     }
 
     .table-container {
@@ -531,6 +676,61 @@
     th {
       background: #F1F5F9;
       font-weight: 600;
+    }
+
+    @media (min-width: 768px) {
+      .app-container.admin-mode {
+        padding: 28px 32px 40px;
+      }
+
+      #adminSection > div:first-child h3 {
+        font-size: 22px !important;
+      }
+
+      #adminSection .table-container {
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .05);
+      }
+
+      #adminSection table {
+        font-size: 13px;
+      }
+
+      #adminSection th,
+      #adminSection td {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app-container.admin-mode {
+        padding-bottom: 24px;
+      }
+
+      #adminSection {
+        padding: 14px !important;
+      }
+
+      .filter-grid {
+        gap: 8px;
+      }
+
+      .admin-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .admin-actions .btn-primary:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .table-container table {
+        min-width: 680px;
+      }
+
+      .admin-modal-content {
+        max-height: calc(100vh - 36px);
+        overflow-y: auto;
+      }
     }
   </style>
 </head>
@@ -589,9 +789,14 @@
   <!-- ==================== SECTION 2: BERANDA GURU/USER ==================== -->
   <div id="userHomeSection" style="display: none;">
     <div class="header-bg" style="height: 120px;">
-      <div class="user-profile-chip">
-        <i class="fa-solid fa-user"></i>
-        <span id="displayUserName">GURU MAN</span>
+      <div class="user-header-actions">
+        <div class="user-profile-chip">
+          <i class="fa-solid fa-user"></i>
+          <span id="displayUserName">GURU MAN</span>
+        </div>
+        <button type="button" class="btn-user-logout" onclick="logout()" aria-label="Keluar dari akun">
+          <i class="fa-solid fa-power-off"></i> Keluar
+        </button>
       </div>
     </div>
 
@@ -676,6 +881,63 @@
     </div>
   </div>
 
+  <!-- ==================== HALAMAN LIVE AGENT ==================== -->
+  <section class="utility-page" id="chatSection" aria-label="Live Agent">
+    <div class="page-title-card">
+      <h2><i class="fa-solid fa-headset"></i> Live Agent</h2>
+      <p>Asisten virtual Geopresensi MAN Kota Lhokseumawe</p>
+    </div>
+    <div class="chat-card">
+      <div class="chat-messages" id="chatMessages" aria-live="polite">
+        <div class="chat-message bot">Assalamu’alaikum! Saya asisten virtual. Ada yang bisa saya bantu terkait aplikasi presensi?</div>
+      </div>
+      <div class="chat-shortcuts">
+        <button type="button" onclick="askChat('Bagaimana cara presensi?')">Cara presensi</button>
+        <button type="button" onclick="askChat('Bagaimana melihat riwayat?')">Riwayat presensi</button>
+        <button type="button" onclick="askChat('GPS saya bermasalah')">Masalah GPS</button>
+      </div>
+      <form class="chat-form" onsubmit="sendChatMessage(event)">
+        <input id="chatInput" type="text" placeholder="Tulis pertanyaan..." aria-label="Tulis pertanyaan" required>
+        <button type="submit" aria-label="Kirim pesan"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+    </div>
+    <a class="btn-primary" href="https://api.whatsapp.com/send/?phone=6285262820401" target="_blank" rel="noopener noreferrer" style="margin-top:12px; text-decoration:none; background:#10B981;">
+      <i class="fa-brands fa-whatsapp"></i> Hubungi petugas melalui WhatsApp
+    </a>
+  </section>
+
+  <!-- ==================== HALAMAN KALENDER ==================== -->
+  <section class="utility-page" id="calendarSection" aria-label="Kalender">
+    <div class="page-title-card" style="background:linear-gradient(135deg,#0EA5E9,#4C77ED);">
+      <h2><i class="fa-regular fa-calendar-days"></i> Kalender</h2>
+      <!-- <p>Lihat tanggal dan pilih hari yang ingin Anda cek.</p> -->
+    </div>
+    <div class="calendar-card">
+      <div class="calendar-controls">
+        <button type="button" onclick="changeCalendarMonth(-1)" aria-label="Bulan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+        <h3 id="calendarMonthTitle"></h3>
+        <button type="button" onclick="changeCalendarMonth(1)" aria-label="Bulan berikutnya"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="calendar-selection" id="calendarSelection" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ==================== HALAMAN INFORMASI ==================== -->
+  <section class="utility-page" id="informationSection" aria-label="Informasi aplikasi">
+    <div class="page-title-card" style="background:linear-gradient(135deg,#0F766E,#10B981);">
+      <h2><i class="fa-solid fa-circle-info"></i> Panduan Aplikasi</h2>
+      <p>Informasi singkat tata cara menggunakan Geopresensi.</p>
+    </div>
+    <article class="guide-card"><span class="guide-number">1</span><div><h3>Masuk ke aplikasi</h3><p>Masukkan NIK dan password yang telah diberikan, lalu tekan tombol Masuk.</p></div></article>
+    <article class="guide-card"><span class="guide-number">2</span><div><h3>Buka menu presensi</h3><p>Dari Beranda, tekan tombol Absensi atau menu Presensi pada navigasi bawah.</p></div></article>
+    <article class="guide-card"><span class="guide-number">3</span><div><h3>Aktifkan lokasi perangkat</h3><p>Izinkan akses lokasi pada browser dan pastikan GPS aktif. Tombol presensi tersedia saat Anda berada dalam radius lokasi madrasah.</p></div></article>
+    <article class="guide-card"><span class="guide-number">4</span><div><h3>Catat masuk atau pulang</h3><p>Periksa status lokasi pada peta, kemudian tekan Masuk atau Pulang sesuai kebutuhan. Tunggu pesan konfirmasi.</p></div></article>
+    <article class="guide-card"><span class="guide-number">5</span><div><h3>Lihat riwayat presensi</h3><p>Buka menu Kalender di navigasi bawah untuk melihat riwayat presensi Anda.</p></div></article>
+    <article class="guide-card"><span class="guide-number">6</span><div><h3>Keluar dengan aman</h3><p>Tekan tombol Keluar di bagian atas Beranda setelah selesai menggunakan aplikasi.</p></div></article>
+    <p style="padding:6px 2px; color:var(--text-muted); font-size:10px; line-height:1.6;">Jika mengalami kendala, gunakan menu Live Agent atau hubungi petugas melalui WhatsApp.</p>
+  </section>
+
   <!-- ==================== SECTION 4: ADMIN DASHBOARD ==================== -->
   <div id="adminSection" style="display: none; padding: 18px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -698,7 +960,7 @@
       </div>
     </div>
 
-    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+    <div class="admin-actions" style="display: flex; gap: 8px; margin-bottom: 15px;">
       <button class="btn-primary" onclick="loadAdminDashboard()" style="padding: 8px; font-size: 11px; border-radius: 8px;">
         <i class="fa-solid fa-rotate"></i> Refresh
       </button>
@@ -757,10 +1019,12 @@
   </div>
 
   <!-- ==================== BOTTOM SHEET: RIWAYAT PRESENSI ==================== -->
-  <div class="bottom-sheet-modal" id="historyModal">
-    <div class="sheet-content">
-      <div class="sheet-handle" onclick="closeHistorySheet()"></div>
-      <h3 style="font-size: 15px; margin-bottom: 15px; color: #1E293B;">Riwayat Presensi Saya</h3>
+  <div class="bottom-sheet-modal" id="historyModal" onclick="if (event.target === this) closeHistorySheet()">
+    <div class="sheet-content" onclick="event.stopPropagation()">
+      <div class="history-sheet-header">
+        <div class="sheet-handle" onclick="closeHistorySheet()"></div>
+        <h3 style="font-size: 15px; margin-bottom: 15px; color: #1E293B;">Riwayat Presensi Saya</h3>
+      </div>
 
       <div id="historyList">
         <!-- Rendered by JS -->
@@ -769,28 +1033,28 @@
   </div>
 
   <!-- Bottom Navigation Bar -->
-  <div class="bottom-nav" id="bottomNav" style="display: none;">
-    <div class="nav-item active" onclick="showUserHome()">
+  <nav class="bottom-nav" id="bottomNav" aria-label="Navigasi utama" style="display: none;">
+    <button type="button" class="nav-item active" data-nav="home" onclick="showUserHome()" aria-label="Beranda">
       <i class="fa-solid fa-house"></i>
       <span>Beranda</span>
-    </div>
-    <div class="nav-item">
+    </button>
+    <button type="button" class="nav-item" data-nav="chat" onclick="showChatPage()" aria-label="Buka Live Agent">
       <i class="fa-solid fa-headset"></i>
       <span>Live Agent</span>
-    </div>
-    <div class="nav-item" onclick="showPresensiPage()">
-      <i class="fa-solid fa-border-all" style="font-size: 22px; color: var(--primary);"></i>
-      <span>Menu</span>
-    </div>
-    <div class="nav-item" onclick="openHistorySheet()">
+    </button>
+    <button type="button" class="nav-item" data-nav="presensi" onclick="showPresensiPage()" aria-label="Buka menu presensi">
+      <i class="fa-solid fa-fingerprint"></i>
+      <span>Presensi</span>
+    </button>
+    <button type="button" class="nav-item" data-nav="calendar" onclick="showCalendarPage()" aria-label="Buka kalender">
       <i class="fa-regular fa-calendar-days"></i>
       <span>Kalender</span>
-    </div>
-    <div class="nav-item">
-      <i class="fa-regular fa-newspaper"></i>
-      <span>Berita</span>
-    </div>
-  </div>
+    </button>
+    <button type="button" class="nav-item" data-nav="information" onclick="showInformationPage()" aria-label="Buka informasi dan panduan">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>Informasi</span>
+    </button>
+  </nav>
 
 </div>
 
@@ -814,6 +1078,8 @@
   let isWithinRadius = false;
   let allRekapRecords = [];
   let adminStaffList = [];
+  let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let selectedCalendarDate = new Date();
 
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -889,6 +1155,7 @@
       document.getElementById("loginSection").style.display = "none";
 
       if (currentUser.role === "Admin") {
+        document.querySelector(".app-container").classList.add("admin-mode");
         document.getElementById("adminSection").style.display = "block";
         loadAdminDashboard();
       } else {
@@ -904,24 +1171,150 @@
 
   function logout() {
     currentUser = null;
+    document.querySelector(".app-container").classList.remove("admin-mode");
     document.getElementById("adminSection").style.display = "none";
-    document.getElementById("userHomeSection").style.display = "none";
-    document.getElementById("presensiSection").style.display = "none";
+    hideUserPages();
     document.getElementById("bottomNav").style.display = "none";
+    document.getElementById("historyModal").classList.remove("active");
     document.getElementById("loginSection").style.display = "block";
   }
 
   // Section Navigations
+  function hideUserPages() {
+    ["userHomeSection", "presensiSection", "chatSection", "calendarSection", "informationSection"].forEach(id => {
+      document.getElementById(id).style.display = "none";
+      document.getElementById(id).classList.remove("active");
+    });
+  }
+
+  function setBottomNavActive(navName) {
+    document.querySelectorAll("#bottomNav [data-nav]").forEach(item => {
+      const isActive = item.dataset.nav === navName;
+      item.classList.toggle("active", isActive);
+      if (isActive) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+  }
+
   function showUserHome() {
-    document.getElementById("presensiSection").style.display = "none";
+    hideUserPages();
     document.getElementById("userHomeSection").style.display = "block";
+    setBottomNavActive("home");
   }
 
   function showPresensiPage() {
-    document.getElementById("userHomeSection").style.display = "none";
+    hideUserPages();
     document.getElementById("presensiSection").style.display = "block";
+    setBottomNavActive("presensi");
     initMap();
     checkLocationAndStatus();
+  }
+
+  function showChatPage() {
+    hideUserPages();
+    document.getElementById("chatSection").style.display = "block";
+    setBottomNavActive("chat");
+    document.getElementById("chatInput").focus();
+  }
+
+  function showCalendarPage() {
+    hideUserPages();
+    document.getElementById("calendarSection").style.display = "block";
+    setBottomNavActive("calendar");
+    renderCalendar();
+  }
+
+  function showInformationPage() {
+    hideUserPages();
+    document.getElementById("informationSection").style.display = "block";
+    setBottomNavActive("information");
+  }
+
+  function appendChatMessage(text, sender) {
+    const messages = document.getElementById("chatMessages");
+    const bubble = document.createElement("div");
+    bubble.className = `chat-message ${sender}`;
+    bubble.textContent = text;
+    messages.appendChild(bubble);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function getChatReply(message) {
+    const text = message.toLowerCase();
+    if (text.includes("presensi") || text.includes("absen") || text.includes("masuk") || text.includes("pulang")) {
+      return "Buka menu Presensi, izinkan akses lokasi, lalu pastikan Anda berada dalam radius madrasah. Tekan tombol Masuk atau Pulang dan tunggu konfirmasi.";
+    }
+    if (text.includes("riwayat") || text.includes("kalender")) {
+      return "Buka menu Kalender, lalu tekan tombol Lihat Riwayat Presensi untuk melihat catatan presensi Anda.";
+    }
+    if (text.includes("gps") || text.includes("lokasi") || text.includes("radius")) {
+      return "Pastikan GPS perangkat aktif dan izin lokasi untuk browser diberikan. Coba muat ulang halaman Presensi dan pastikan lokasi tidak dibatasi.";
+    }
+    if (text.includes("password") || text.includes("login") || text.includes("masuk akun")) {
+      return "Gunakan NIK dan password akun yang telah diberikan. Jika kredensial tidak dapat digunakan, hubungi administrator madrasah.";
+    }
+    return "Saya belum menemukan jawaban untuk pertanyaan itu. Coba tanyakan tentang cara presensi, riwayat, GPS, atau login. Anda juga dapat menghubungi petugas melalui tombol WhatsApp di bawah chat.";
+  }
+
+  function sendChatMessage(event) {
+    event.preventDefault();
+    const input = document.getElementById("chatInput");
+    const message = input.value.trim();
+    if (!message) return;
+    appendChatMessage(message, "user");
+    input.value = "";
+    window.setTimeout(() => appendChatMessage(getChatReply(message), "bot"), 250);
+  }
+
+  function askChat(message) {
+    document.getElementById("chatInput").value = message;
+    document.querySelector(".chat-form").requestSubmit();
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById("calendarGrid");
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const today = new Date();
+    const monthLabel = calendarMonth.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+    document.getElementById("calendarMonthTitle").textContent = monthLabel;
+    grid.innerHTML = "";
+
+    ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].forEach(day => {
+      const label = document.createElement("span");
+      label.className = "calendar-weekday";
+      label.textContent = day;
+      grid.appendChild(label);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let blank = 0; blank < firstDay; blank++) {
+      const empty = document.createElement("span");
+      empty.className = "calendar-day empty";
+      grid.appendChild(empty);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "calendar-day";
+      button.textContent = day;
+      if (date.toDateString() === today.toDateString()) button.classList.add("today");
+      if (date.toDateString() === selectedCalendarDate.toDateString()) button.classList.add("selected");
+      button.setAttribute("aria-label", date.toLocaleDateString("id-ID", { dateStyle: "full" }));
+      button.addEventListener("click", () => {
+        selectedCalendarDate = date;
+        renderCalendar();
+      });
+      grid.appendChild(button);
+    }
+    document.getElementById("calendarSelection").textContent = `Tanggal dipilih: ${selectedCalendarDate.toLocaleDateString("id-ID", { dateStyle: "full" })}`;
+  }
+
+  function changeCalendarMonth(offset) {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + offset, 1);
+    renderCalendar();
   }
 
   // Haversine Distance Formula
@@ -1050,6 +1443,7 @@
 
   // Open & Render History Bottom Sheet
   async function openHistorySheet() {
+    setBottomNavActive("history");
     document.getElementById("historyModal").classList.add("active");
     const historyList = document.getElementById("historyList");
     historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Memuat riwayat...</p>";
@@ -1078,6 +1472,9 @@
 
   function closeHistorySheet() {
     document.getElementById("historyModal").classList.remove("active");
+    if (document.getElementById("presensiSection").style.display !== "none") setBottomNavActive("presensi");
+    else if (document.getElementById("calendarSection").style.display !== "none") setBottomNavActive("calendar");
+    else setBottomNavActive("home");
   }
 
   // Admin Dashboard Functions
