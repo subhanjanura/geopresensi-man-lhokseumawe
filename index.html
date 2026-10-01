@@ -923,6 +923,7 @@
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
       <div class="calendar-selection" id="calendarSelection" aria-live="polite"></div>
+      <div id="calendarAttendance" aria-live="polite" style="margin-top:12px;"></div>
     </div>
   </section>
 
@@ -936,7 +937,7 @@
     <article class="guide-card"><span class="guide-number">2</span><div><h3>Buka menu presensi</h3><p>Dari Beranda, tekan tombol Absensi atau menu Presensi pada navigasi bawah.</p></div></article>
     <article class="guide-card"><span class="guide-number">3</span><div><h3>Aktifkan lokasi perangkat</h3><p>Izinkan akses lokasi pada browser dan pastikan GPS aktif. Tombol presensi tersedia saat Anda berada dalam radius lokasi madrasah.</p></div></article>
     <article class="guide-card"><span class="guide-number">4</span><div><h3>Catat masuk atau pulang</h3><p>Periksa status lokasi pada peta, kemudian tekan Masuk atau Pulang sesuai kebutuhan. Tunggu pesan konfirmasi.</p></div></article>
-    <article class="guide-card"><span class="guide-number">5</span><div><h3>Lihat riwayat presensi</h3><p>Buka menu Kalender di navigasi bawah untuk melihat riwayat presensi Anda.</p></div></article>
+    <article class="guide-card"><span class="guide-number">5</span><div><h3>Lihat riwayat presensi</h3><p>Buka menu Kalender, lalu pilih tanggal untuk melihat catatan presensi Anda pada hari tersebut.</p></div></article>
     <article class="guide-card"><span class="guide-number">6</span><div><h3>Keluar dengan aman</h3><p>Tekan tombol Keluar di bagian atas Beranda setelah selesai menggunakan aplikasi.</p></div></article>
     <p style="padding:6px 2px; color:var(--text-muted); font-size:10px; line-height:1.6;">Jika mengalami kendala, gunakan menu Live Agent atau hubungi petugas melalui WhatsApp.</p>
   </section>
@@ -1085,6 +1086,7 @@
   let attendanceStatusError = false;
   let allRekapRecords = [];
   let adminStaffList = [];
+  let userAttendanceRecords = null;
   let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   let selectedCalendarDate = new Date();
 
@@ -1231,6 +1233,7 @@
     document.getElementById("calendarSection").style.display = "block";
     setBottomNavActive("calendar");
     renderCalendar();
+    loadCalendarAttendance();
   }
 
   function showInformationPage() {
@@ -1254,7 +1257,7 @@
       return "Buka menu Presensi, izinkan akses lokasi, lalu pastikan Anda berada dalam radius madrasah. Tekan tombol Masuk atau Pulang dan tunggu konfirmasi.";
     }
     if (text.includes("riwayat") || text.includes("kalender")) {
-      return "Buka menu Kalender, lalu tekan tombol Lihat Riwayat Presensi untuk melihat catatan presensi Anda.";
+      return "Buka menu Kalender, pilih tanggal yang ingin diperiksa, lalu lihat catatan presensi pada bagian bawah kalender.";
     }
     if (text.includes("gps") || text.includes("lokasi") || text.includes("radius")) {
       return "Pastikan GPS perangkat aktif dan izin lokasi untuk browser diberikan. Coba muat ulang halaman Presensi dan pastikan lokasi tidak dibatasi.";
@@ -1315,10 +1318,48 @@
       button.addEventListener("click", () => {
         selectedCalendarDate = date;
         renderCalendar();
+        renderCalendarAttendance();
       });
       grid.appendChild(button);
     }
     document.getElementById("calendarSelection").textContent = `Tanggal dipilih: ${selectedCalendarDate.toLocaleDateString("id-ID", { dateStyle: "full" })}`;
+  }
+
+  async function loadCalendarAttendance() {
+    const container = document.getElementById("calendarAttendance");
+    container.innerHTML = "<p style='text-align:center; font-size:11px; color:var(--text-muted);'>Memuat riwayat presensi...</p>";
+    const res = await apiRequest({ action: "getRekap" });
+    if (res.status !== "success" || !Array.isArray(res.data)) {
+      userAttendanceRecords = null;
+      container.innerHTML = "<p style='text-align:center; font-size:11px; color:var(--text-muted);'>Gagal memuat riwayat presensi.</p>";
+      return;
+    }
+
+    const userNik = String(currentUser?.nik ?? "").trim();
+    userAttendanceRecords = res.data.filter(record =>
+      record && String(record.nik ?? "").trim() === userNik
+    );
+    renderCalendarAttendance();
+  }
+
+  function renderCalendarAttendance() {
+    const container = document.getElementById("calendarAttendance");
+    if (!container || !userAttendanceRecords) return;
+
+    const selectedKey = `${selectedCalendarDate.getFullYear()}-${String(selectedCalendarDate.getMonth() + 1).padStart(2, "0")}-${String(selectedCalendarDate.getDate()).padStart(2, "0")}`;
+    const records = userAttendanceRecords.filter(record => attendanceDateKey(record.timestamp) === selectedKey);
+    if (records.length === 0) {
+      container.innerHTML = "<p style='text-align:center; font-size:11px; color:var(--text-muted);'>Tidak ada data presensi pada tanggal ini.</p>";
+      return;
+    }
+
+    container.innerHTML = records.map(record => `
+      <div class="history-card">
+        <h4>${escapeHTML(record.timestamp)}</h4>
+        <p>Status: <b>${escapeHTML(record.status)}</b></p>
+        <p>Jam Masuk: <span class="time-value">${escapeHTML(record.masuk)}</span> | Jam Pulang: <span class="time-value">${escapeHTML(record.pulang)}</span></p>
+      </div>
+    `).join("");
   }
 
   function changeCalendarMonth(offset) {
@@ -1371,6 +1412,16 @@
     }).formatToParts(new Date());
     const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
     return `${values.year}-${values.month}-${values.day}`;
+  }
+
+  function formatJakartaTimestamp(date) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Jakarta",
+      day: "numeric", month: "numeric", year: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.day}/${values.month}/${values.year}, ${values.hour}.${values.minute}.${values.second}`;
   }
 
   function hasAttendanceValue(value) {
@@ -1485,8 +1536,8 @@
     btnPulang.disabled = true;
 
     const now = new Date();
-    // Format timestamp D/M/YYYY, HH.mm.ss sesuai Kode.gs
-    const timestampStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}, ${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}.${String(now.getSeconds()).padStart(2, '0')}`;
+    // Keep stored timestamps aligned with the app's Asia/Jakarta date checks.
+    const timestampStr = formatJakartaTimestamp(now);
 
     const payload = {
       action: "checkin",
@@ -1572,14 +1623,7 @@
       const nama = String(r.nama ?? "").toLowerCase();
       const nik = String(r.nik ?? "").toLowerCase();
       const matchesSearch = nama.includes(search) || nik.includes(search);
-      const dateParts = String(r.timestamp ?? "").split(",")[0].trim().split(/[/-]/);
-      let recordDate = "";
-      if (dateParts.length === 3) {
-        const [first, second, third] = dateParts;
-        recordDate = third.length === 4
-          ? `${third}-${second.padStart(2, "0")}-${first.padStart(2, "0")}`
-          : `${first}-${second.padStart(2, "0")}-${third.padStart(2, "0")}`;
-      }
+      const recordDate = attendanceDateKey(r.timestamp);
       const matchesDate = (!startDate || (recordDate && recordDate >= startDate)) &&
         (!endDate || (recordDate && recordDate <= endDate));
       return matchesSearch && matchesDate;
@@ -1590,7 +1634,9 @@
       return;
     }
 
-    tbody.innerHTML = filtered.reverse().map((r, index) => `
+    filtered.sort((a, b) => attendanceDateKey(a.timestamp).localeCompare(attendanceDateKey(b.timestamp)));
+
+    tbody.innerHTML = filtered.map((r, index) => `
       <tr>
         <td>${index + 1}</td>
         <td>${escapeHTML(String(r.timestamp ?? "").split(',')[0])}</td>
