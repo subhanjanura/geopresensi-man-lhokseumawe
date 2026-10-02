@@ -183,6 +183,25 @@
       cursor: not-allowed;
     }
 
+    .btn-primary.is-loading {
+      cursor: wait;
+      opacity: 0.9;
+    }
+
+    .btn-primary.is-loading::before {
+      content: '';
+      width: 15px;
+      height: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.45);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: attendanceSpin 0.7s linear infinite;
+    }
+
+    @keyframes attendanceSpin {
+      to { transform: rotate(360deg); }
+    }
+
     .btn-sso {
       width: 100%;
       padding: 13px;
@@ -1532,8 +1551,13 @@
 
     const btnMasuk = document.getElementById("btnMasuk");
     const btnPulang = document.getElementById("btnPulang");
+    const activeButton = statusPresensi === "Pulang" ? btnPulang : btnMasuk;
+    const originalButtonContent = activeButton.innerHTML;
     btnMasuk.disabled = true;
     btnPulang.disabled = true;
+    activeButton.classList.add("is-loading");
+    activeButton.setAttribute("aria-busy", "true");
+    activeButton.innerHTML = "Memproses...";
 
     const now = new Date();
     // Keep stored timestamps aligned with the app's Asia/Jakarta date checks.
@@ -1551,6 +1575,9 @@
     };
 
     const res = await apiRequest(payload);
+    activeButton.innerHTML = originalButtonContent;
+    activeButton.classList.remove("is-loading");
+    activeButton.removeAttribute("aria-busy");
 
     if (res.status === "success") {
       alert(res.message);
