@@ -495,6 +495,23 @@
       font-weight: 600;
     }
 
+    .history-filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .history-filters select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #FAFAFA;
+      color: var(--text-main);
+      font-size: 11px;
+    }
+
     /* Bottom Navigation */
     .bottom-nav {
       position: fixed;
@@ -1047,8 +1064,24 @@
       <div class="history-sheet-header">
         <div class="sheet-handle" onclick="closeHistorySheet()"></div>
         <h3 style="font-size: 15px; margin-bottom: 15px; color: #1E293B;">Riwayat Presensi Saya</h3>
+        <div class="history-filters">
+        <select id="historyMonthFilter" aria-label="Filter bulan riwayat" onchange="renderMyHistory()">
+          <option value="01">Januari</option>
+          <option value="02">Februari</option>
+          <option value="03">Maret</option>
+          <option value="04">April</option>
+          <option value="05">Mei</option>
+          <option value="06">Juni</option>
+          <option value="07">Juli</option>
+          <option value="08">Agustus</option>
+          <option value="09">September</option>
+          <option value="10">Oktober</option>
+          <option value="11">November</option>
+          <option value="12">Desember</option>
+        </select>
+        <select id="historyYearFilter" aria-label="Filter tahun riwayat" onchange="renderMyHistory()"></select>
+        </div>
       </div>
-
       <div id="historyList">
         <!-- Rendered by JS -->
       </div>
@@ -1106,6 +1139,7 @@
   let allRekapRecords = [];
   let adminStaffList = [];
   let userAttendanceRecords = null;
+  let myHistoryRecords = [];
   let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   let selectedCalendarDate = new Date();
 
@@ -1594,28 +1628,59 @@
     setBottomNavActive("history");
     document.getElementById("historyModal").classList.add("active");
     const historyList = document.getElementById("historyList");
+    const monthFilter = document.getElementById("historyMonthFilter");
+    const yearFilter = document.getElementById("historyYearFilter");
     historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Memuat riwayat...</p>";
 
     const res = await apiRequest({ action: "getRekap" });
-
-    if (res.status === "success" && Array.isArray(res.data) && res.data.length > 0) {
-      // Filter hanya data user yang sedang login
-      const myData = res.data.filter(r => r.nik === currentUser.nik);
-
-      if (myData.length > 0) {
-        historyList.innerHTML = myData.reverse().map(item => `
-          <div class="history-card">
-            <h4>${escapeHTML(item.timestamp)}</h4>
-            <p>Status : <b>${escapeHTML(item.status)}</b></p>
-            <p>Jam Masuk : <span class="time-value">${escapeHTML(item.masuk)}</span> | Jam Pulang : <span class="time-value">${escapeHTML(item.pulang)}</span></p>
-          </div>
-        `).join("");
-      } else {
-        historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Belum ada data presensi.</p>";
-      }
-    } else {
+    if (res.status !== "success" || !Array.isArray(res.data)) {
+      myHistoryRecords = [];
       historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Gagal mengambil data riwayat.</p>";
+      return;
     }
+
+    const userNik = String(currentUser?.nik ?? "").trim();
+    myHistoryRecords = res.data.filter(record =>
+      record && String(record.nik ?? "").trim() === userNik
+    );
+
+    const todayKey = jakartaTodayKey();
+    const currentYear = Number(todayKey.slice(0, 4));
+    const availableYears = new Set([currentYear]);
+    myHistoryRecords.forEach(record => {
+      const key = attendanceDateKey(record.timestamp);
+      if (key) availableYears.add(Number(key.slice(0, 4)));
+    });
+    yearFilter.innerHTML = [...availableYears]
+      .sort((a, b) => b - a)
+      .map(year => `<option value="${year}">${year}</option>`)
+      .join("");
+    monthFilter.value = todayKey.slice(5, 7);
+    yearFilter.value = String(currentYear);
+    renderMyHistory();
+  }
+
+  function renderMyHistory() {
+    const historyList = document.getElementById("historyList");
+    const month = document.getElementById("historyMonthFilter").value;
+    const year = document.getElementById("historyYearFilter").value;
+    const selectedPeriod = `${year}-${month}`;
+    const filteredRecords = myHistoryRecords
+      .filter(record => attendanceDateKey(record.timestamp).startsWith(selectedPeriod))
+      .sort((a, b) => attendanceDateKey(b.timestamp).localeCompare(attendanceDateKey(a.timestamp)));
+
+    if (filteredRecords.length === 0) {
+      historyList.innerHTML = "<p style='text-align:center; font-size:12px; color:var(--text-muted);'>Tidak ada data presensi pada bulan ini.</p>";
+      return;
+    }
+
+    historyList.innerHTML = filteredRecords.map(item => `
+      <div class="history-card">
+        <h4>${escapeHTML(item.timestamp)}</h4>
+        <p>Status : <b>${escapeHTML(item.status)}</b></p>
+        <p>Jam Masuk : <span class="time-value">${escapeHTML(item.masuk)}</span> | Jam Pulang : <span class="time-value">${escapeHTML(item.pulang)}</span></p>
+      </div>
+    `).join("");
   }
 
   function closeHistorySheet() {
